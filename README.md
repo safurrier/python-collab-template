@@ -173,7 +173,51 @@ jobs:
     - run: make check
     - run: bash <(curl -s https://codecov.io/bash)
 ```
+## Docker Dev Env + Image
 
+Docker is often used for environment management and deployment of production code.
+
+This repo is setup to package things in a Docker image for this purpose.
+
+Through the use of [Docker Compose](https://docs.docker.com/compose/) a dev environment can also be stood up and torn down quickly. Docker compose allows for better environment setup through connected services (e.g. databases, etc) for closer replication of a production environment.
+
+The docker compose file `docker/docker-compose.yml` builds an image from `docker/Dockerfile` and runs a bash shell. 
+
+Environment variables can be added in the relevant section of the `docker-compose.yml` if they are provided in a `.env` file within the `docker` directory. By default the `.env` file is excluded from the repo since it may contain secrets. Instead the file `docker/template.env` is provided which should provide non secret environment variables and the variable name for required secrets.
+
+### Dev Env
+
+To create a dev environment run:
+
+```bash
+make dev-env
+```
+
+This should create a running docker container with everything required for development in this repo.
+
+All other Make commands should still work as before.
+
+All changes made to relevant files inside the container will be reflected outside the container as they are bound in the `volumes` section of the `docker-compose.yml` file. Any newly added directories or files will need to be added to the `docker/Dockerfile` with a `COPY` command and bound as a volume in the docker compose file.
+
+### Production Image 
+
+Once development is finished and the project is ready to be deployed it can be built and tagged as a Docker image with:
+
+```bash
+make build-image
+```
+
+The image name and tag are set in the Makefile variables `IMAGE_NAME` and `IMAGE_TAG`.
+
+### Pushing to a container registry
+
+If the name of the image is a container registry, the image can be pushed to the registry with:
+
+```bash
+make push-image 
+```
+
+## Misc
 ### 👉 View the [article](https://eugeneyan.com/writing/setting-up-python-project-for-automation-and-collaboration/) for the walkthrough.
 
 ### Todo

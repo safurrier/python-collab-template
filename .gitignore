@@ -9,3 +9,5 @@ index.rst
 .coverage
 *.pyc
 setup_mac.sh
+docker/.env
+.vs_code/*
