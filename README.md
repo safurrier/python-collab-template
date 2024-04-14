@@ -10,14 +10,16 @@ Repository for [How to set up a Python Repo for Automation and Collaboration](ht
 git clone git@github.com:eugeneyan/python-collab-template.git
 cd python-collab-template
 
-# Create python environment (-B might be needed to execute)
-make setup -B
+# Install [Rye](https://rye-up.com/guide/) if it's not available on your system
+make install-rye
+
+# Sync Rye to your project specifications (e.g. .python-verision, added dependencies)
 
 # Run the suite of tests and checks
 make check
 ```
 
-Make a pull request to this repo to see the checks in action 😎 
+Make a pull request to this repo to see the checks in action 😎
 
 Here's a [sample pull request](https://github.com/eugeneyan/python-collab-template/pull/1) which initially failed ❌ the checks, and then passed ✅.
 
@@ -48,7 +50,7 @@ def test_extract_title_with_replacement(lowercased_df):
 ```
 
 ```shell
-$ pytest
+$ rye run pytest
 ============================= test session starts ==============================
 platform darwin -- Python 3.8.2, pytest-5.4.3, py-1.8.2, pluggy-0.13.1
 rootdir: /Users/eugene/projects/python-collaboration-template/tests/data_prep
@@ -62,17 +64,18 @@ test_categorical.py::test_extract_title_with_replacement PASSED          [100%]
 
 ### Code Coverage
 ```
-$ pytest --cov=src
-============================= test session starts ==============================
-platform darwin -- Python 3.8.2, pytest-5.4.3, py-1.8.2, pluggy-0.13.1
-rootdir: /Users/eugene/projects/python-collaboration-template
-plugins: cov-2.10.0
-collected 9 items
+$ rye run pytest --cov=src
+============================================================================================================= test session starts ==============================================================================================================
+platform darwin -- Python 3.12.2, pytest-8.1.1, pluggy-1.4.0
+rootdir: /Users/alex.furrier/git_repositories/python-collab-template
+configfile: pyproject.toml
+plugins: cov-5.0.0
+collected 8 items
 
-tests/data_prep/test_categorical.py ....                                 [ 44%]
-tests/data_prep/test_continuous.py .....                                 [100%]
+tests/data_prep/test_categorical.py ...                                                                                                                                                                                                  [ 37%]
+tests/data_prep/test_continuous.py .....                                                                                                                                                                                                 [100%]
 
----------- coverage: platform darwin, python 3.8.2-final-0 -----------
+---------- coverage: platform darwin, python 3.12.2-final-0 ----------
 Name                           Stmts   Miss  Cover
 --------------------------------------------------
 src/__init__.py                    0      0   100%
@@ -82,59 +85,22 @@ src/data_prep/continuous.py       11      0   100%
 --------------------------------------------------
 TOTAL                             23      0   100%
 
-============================== 9 passed in 0.49s ===============================
+
+======================================= 8 passed in 0.75s ========================================================
 ```
 
 ### Linting
 ```
-$ pylint src.data_prep.categorical --reports=y
-************* Module src.data_prep.categorical
-src/data_prep/categorical.py:20:0: C0330: Wrong continued indentation (add 9 spaces).
-                        df[title_col].map(replace_dict),
-                        ^        | (bad-continuation)
-src/data_prep/categorical.py:21:0: C0330: Wrong continued indentation (add 9 spaces).
-                        df[title_col])
-                        ^        | (bad-continuation)
-src/data_prep/categorical.py:16:12: W1401: Anomalous backslash in string: '\.'. String constant might be missing an r prefix. (anomalous-backslash-in-string)
-src/data_prep/categorical.py:1:0: C0114: Missing module docstring (missing-module-docstring)
-src/data_prep/categorical.py:5:0: C0116: Missing function or method docstring (missing-function-docstring)
-src/data_prep/categorical.py:9:0: C0116: Missing function or method docstring (missing-function-docstring)
-src/data_prep/categorical.py:14:0: C0116: Missing function or method docstring (missing-function-docstring)
-
-Report
-======
-12 statements analysed.
-
-...
-
-Messages
---------
-+------------------------------+------------+
-|message id                    |occurrences |
-+==============================+============+
-|missing-function-docstring    |3           |
-+------------------------------+------------+
-|bad-continuation              |2           |
-+------------------------------+------------+
-|missing-module-docstring      |1           |
-+------------------------------+------------+
-|anomalous-backslash-in-string |1           |
-+------------------------------+------------+
-
------------------------------------
-Your code has been rated at 4.17/10
+$ rye lint src/data_prep/categorical -v
 ```
 
 ### Type Checking
 ```
-$ mypy src
-src/data_prep/continuous.py:23: error: Incompatible types in assignment (expression has type "str", variable has type "float")
+$ rye run mypy src
+src/data_prep/categorical.py:34: error: Incompatible default for argument "replace_dict" (default has type "None", argument has type "dict[Any, Any]")  [assignment]
+src/data_prep/categorical.py:34: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/data_prep/categorical.py:34: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
 Found 1 error in 1 file (checked 4 source files)
-```
-
-```
-$ mypy src
-Success: no issues found in 4 source files
 ```
 
 ### Wrapping it in a Makefile
@@ -181,7 +147,7 @@ This repo is setup to package things in a Docker image for this purpose.
 
 Through the use of [Docker Compose](https://docs.docker.com/compose/) a dev environment can also be stood up and torn down quickly. Docker compose allows for better environment setup through connected services (e.g. databases, etc) for closer replication of a production environment.
 
-The docker compose file `docker/docker-compose.yml` builds an image from `docker/Dockerfile` and runs a bash shell. 
+The docker compose file `docker/docker-compose.yml` builds an image from `docker/Dockerfile` and runs a bash shell.
 
 Environment variables can be added in the relevant section of the `docker-compose.yml` if they are provided in a `.env` file within the `docker` directory. By default the `.env` file is excluded from the repo since it may contain secrets. Instead the file `docker/template.env` is provided which should provide non secret environment variables and the variable name for required secrets.
 
@@ -199,7 +165,7 @@ All other Make commands should still work as before.
 
 All changes made to relevant files inside the container will be reflected outside the container as they are bound in the `volumes` section of the `docker-compose.yml` file. Any newly added directories or files will need to be added to the `docker/Dockerfile` with a `COPY` command and bound as a volume in the docker compose file.
 
-### Production Image 
+### Production Image
 
 Once development is finished and the project is ready to be deployed it can be built and tagged as a Docker image with:
 
@@ -214,7 +180,7 @@ The image name and tag are set in the Makefile variables `IMAGE_NAME` and `IMAGE
 If the name of the image is a container registry, the image can be pushed to the registry with:
 
 ```bash
-make push-image 
+make push-image
 ```
 
 ## Misc

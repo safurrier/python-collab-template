@@ -1,8 +1,8 @@
+install-rye:
+	curl -sSf https://rye-up.com/get | bash
+
 setup:
-	python -m venv .venv && . .venv/bin/activate
-	pip install --upgrade pip
-	pip install -r requirements.dev
-	pip install -r requirements.prod
+	rye sync
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
@@ -16,21 +16,27 @@ clean-test:
 
 clean: clean-pyc clean-test
 
-test: clean
-	. .venv/bin/activate && py.test tests --cov=src --cov-report=term-missing --cov-fail-under 95
+test: clean setup
+	rye run py.test tests --cov=src --cov-report=term-missing
 
 mypy:
-	. .venv/bin/activate && mypy src
+	rye run mypy src
 
 lint:
-	. .venv/bin/activate && pylint src -j 4 --reports=y
+	rye lint src
 
-docs: FORCE
-	cd docs; . .venv/bin/activate && sphinx-apidoc -o ./source ./src
-	cd docs; . .venv/bin/activate && sphinx-build -b html ./source ./build
+format:
+	rye format src
+
+# TODO: Sphinx not working with Rye yet
+# docs: FORCE
+# 	cd docs; rye run sphinx-apidoc -o ./source ./src
+# 	cd docs; rye run sphinx-build -b html ./source ./build
+
 FORCE:
 
-check: test lint mypy
+check: setup test mypy format lint
+
 
 # Docker
 ########
@@ -42,8 +48,8 @@ dev-env: refresh-containers
 	@docker compose -f docker/docker-compose.yml down
 	@docker compose -f docker/docker-compose.yml up -d dev
 	@docker exec -ti composed_dev /bin/bash
-      
-refresh-containers: 
+
+refresh-containers:
 	@echo "Rebuilding containers..."
 	@docker compose -f docker/docker-compose.yml build
 
@@ -54,9 +60,9 @@ rebuild-images:
 build-image:
 	@echo Building dev image and tagging as ${IMAGE_NAME}:${IMAGE_TAG}
 	@docker compose -f docker/docker-compose.yml down
-	@docker compose -f docker/docker-compose.yml up -d dev	
+	@docker compose -f docker/docker-compose.yml up -d dev
 	@docker tag dev ${IMAGE_NAME}:${IMAGE_TAG}
 
 push-image: build-image
 	@echo Pushing image to container registry
-	@docker push ${IMAGE_NAME}:${IMAGE_TAG}	
+	@docker push ${IMAGE_NAME}:${IMAGE_TAG}

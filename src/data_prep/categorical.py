@@ -1,8 +1,10 @@
 """
 Data preparation methods for categorical variables.
 """
+
 import pandas as pd
 import numpy as np
+from typing import Optional, Dict, Any
 
 
 def lowercase_string(string: str) -> str:
@@ -31,8 +33,12 @@ def lowercase_column(df: pd.DataFrame, col: str) -> pd.DataFrame:
     return df
 
 
-def extract_title(df: pd.DataFrame, col: str, replace_dict: dict = None,
-                  title_col: str = 'title') -> pd.DataFrame:
+def extract_title(
+    df: pd.DataFrame,
+    col: str,
+    replace_dict: Optional[Dict[str, Any]] = None,
+    title_col: str = "title",
+) -> pd.DataFrame:
     """Extracts titles into a new title column
 
     Args:
@@ -44,11 +50,13 @@ def extract_title(df: pd.DataFrame, col: str, replace_dict: dict = None,
     Returns:
         A DataFrame with an additional column of extracted titles
     """
-    df[title_col] = df[col].str.extract(r' ([A-Za-z]+)\.', expand=False)
+    df[title_col] = df[col].str.extract(r" ([A-Za-z]+)\.", expand=False)
 
     if replace_dict:
-        df[title_col] = np.where(df[title_col].isin(replace_dict.keys()),
-                                 df[title_col].map(replace_dict),
-                                 df[title_col])
+        df[title_col] = np.where(
+            df[title_col].isin(replace_dict.keys()),
+            df[title_col].map(replace_dict),
+            df[title_col],
+        )
 
     return df
