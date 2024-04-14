@@ -11,3 +11,6 @@ index.rst
 setup_mac.sh
 docker/.env
 .vs_code/*
+.mypy_cache/*
+.pytest_cache/*
+.ruff_cache/*

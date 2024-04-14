@@ -1,15 +1,30 @@
-# .github/workflows/tests.yml
-name: Tests
-on: push
+name: Code Quality Checks
+
+on:
+  push:
+  pull_request:
+
 jobs:
-  tests:
+  precommit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
-        architecture: x64
-    - run: make setup
-    - run: make check
-    - run: bash <(curl -s https://codecov.io/bash)
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Rye
+        uses: eifinger/setup-rye@v2
+
+      - name: Sync Rye
+        run: rye sync
+
+      - name: Run MyPy
+        run: rye run mypy src
+
+      - name: Run Linter
+        run: rye lint src
+
+      - name: Run Formatter
+        run: rye format src
+
+      - name: Run Tests
+        run: rye run py.test tests --cov=src --cov-report=term-missing
