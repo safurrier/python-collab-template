@@ -1,40 +1,48 @@
 .PHONY: compile-deps setup clean-pyc clean-test clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
 
-compile-deps:
+# Development Setup
+#################
+compile-deps:  # Compile dependencies from pyproject.toml
 	uv pip compile pyproject.toml -o requirements.txt
 	uv pip compile pyproject.toml --extra dev -o requirements-dev.txt
 
-setup: compile-deps
+setup: compile-deps  # Install uv and project dependencies
 	pip install uv
 	uv pip sync requirements.txt requirements-dev.txt
 
-clean-pyc:
+# Cleaning
+#########
+clean-pyc:  # Remove Python compilation artifacts
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test:
+clean-test:  # Remove test and coverage artifacts
 	rm -f .coverage
 	rm -f .coverage.*
 
 clean: clean-pyc clean-test
 
-test: clean
+# Testing and Quality Checks
+#########################
+test: clean  # Run pytest with coverage
 	uv pip run pytest tests --cov=src --cov-report=term-missing
 
-mypy:
+mypy:  # Run type checking
 	uv pip run mypy src
 
-lint:
+lint:  # Run ruff linter
 	uv pip run ruff check src
 
-format:
+format:  # Run ruff formatter
 	uv pip run ruff format src
 
-check: test mypy lint format
+check: test mypy lint format  # Run all quality checks
 
-clean-example:
+# Project Management
+##################
+clean-example:  # Remove example code (use this to start your own project)
 	rm -rf src/example.py tests/test_example.py
 	touch src/__init__.py tests/__init__.py
 
