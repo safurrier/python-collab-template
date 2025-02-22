@@ -35,16 +35,16 @@ clean: clean-pyc clean-test clean-venv
 # Testing and Quality Checks
 #########################
 test: clean  # Run pytest with coverage
-	uv pip run pytest tests --cov=src --cov-report=term-missing
+	uv run -m pytest tests --cov=src --cov-report=term-missing
 
 mypy:  # Run type checking
-	uv pip run mypy src
+	uv run -m mypy src
 
 lint:  # Run ruff linter
-	uv pip run ruff check src
+	uv run -m ruff check src
 
 format:  # Run ruff formatter
-	uv pip run ruff format src
+	uv run -m ruff format src
 
 check: test mypy lint format  # Run all quality checks
 
