@@ -15,6 +15,9 @@ dev = [
     "pytest>=8.1.1",    # Testing
     "pytest-cov>=5.0.0", # Coverage reporting
     "ruff>=0.3.0",      # Linting and formatting
+    "pre-commit>=3.6.0", # Pre-commit hooks
+    "tomli>=2.0.1",     # TOML reading
+    "tomli-w>=1.0.0",   # TOML writing
 ]
 
 [build-system]
