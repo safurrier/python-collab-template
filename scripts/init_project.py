@@ -75,9 +75,36 @@ def main() -> None:
         "Author email", get_git_config("email") or "your.email@example.com"
     )
 
-    # Clean up example code
-    print("🧹 Cleaning up example code...")
-    run_command("make clean-example")
+    # Handle example code
+    code_choice = prompt_with_default(
+        "How would you like to handle example code?\n"
+        "1. Keep example code (useful for reference)\n"
+        "2. Create minimal placeholder test (ensures checks pass)\n"
+        "3. Remove all example code (clean slate)\n"
+        "Choose option", "1"
+    )
+
+    if code_choice == "2":
+        print("📝 Creating minimal placeholder test...")
+        # Create minimal src module
+        with open("src/example.py", "w") as f:
+            f.write("""def add(a: int, b: int) -> int:
+    \"\"\"Add two numbers.\"\"\"
+    return a + b
+""")
+        
+        # Create minimal test
+        with open("tests/test_example.py", "w") as f:
+            f.write("""from src.example import add
+
+def test_add():
+    assert add(1, 2) == 3
+""")
+    elif code_choice == "3":
+        print("🧹 Removing all example code...")
+        run_command("make clean-example")
+    else:
+        print("📚 Keeping example code for reference...")
 
     # Update pyproject.toml
     print("📝 Updating project configuration...")
