@@ -12,8 +12,8 @@ ensure-uv:  # Install uv if not present
 	@which uv > /dev/null || (curl -LsSf https://astral.sh/uv/install.sh | sh)
 
 setup: ensure-uv compile-deps  # Install dependencies
-	python3 -m venv .venv
-	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync --project-dir .venv requirements.txt requirements-dev.txt
+	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv venv
+	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync requirements.txt requirements-dev.txt
 
 # Cleaning
 #########
