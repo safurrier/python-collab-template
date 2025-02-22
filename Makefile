@@ -1,4 +1,10 @@
-setup:
+.PHONY: compile-deps setup clean-pyc clean-test clean test mypy lint format check dev-env refresh-containers rebuild-images build-image push-image
+
+compile-deps:
+	uv pip compile pyproject.toml -o requirements.txt
+	uv pip compile pyproject.toml --extra dev -o requirements-dev.txt
+
+setup: compile-deps
 	pip install uv
 	uv pip sync requirements.txt requirements-dev.txt
 

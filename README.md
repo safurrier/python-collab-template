@@ -5,15 +5,13 @@
 Repository for [How to set up a Python Repo for Automation and Collaboration](https://eugeneyan.com/writing/setting-up-python-project-for-automation-and-collaboration/).
 
 ## Quickstart
-```
+```bash
 # Clone this repo and change directory
 git clone git@github.com:eugeneyan/python-collab-template.git
 cd python-collab-template
 
-# Install [Rye](https://rye-up.com/guide/) if it's not available on your system
-make install-rye
-
-# Sync Rye to your project specifications (e.g. .python-verision, added dependencies)
+# Install dependencies and set up the environment
+make setup
 
 # Run the suite of tests and checks
 make check
