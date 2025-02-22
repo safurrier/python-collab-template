@@ -123,9 +123,26 @@ def test_add():
     run_command("git add .")
     run_command('git commit -m "feat: Initial project setup"')
 
-    # Install dependencies and set up pre-commit
+    # Configure pre-commit hooks
+    precommit_choice = prompt_with_default(
+        "\nWould you like to enable pre-commit hooks?\n"
+        "These hooks run automatically before each commit to ensure code quality:\n"
+        "- Type checking (mypy)\n"
+        "- Linting (ruff)\n"
+        "- Formatting (ruff)\n"
+        "- Tests (pytest)\n"
+        "\nEnable pre-commit hooks? (y/n)", "y"
+    )
+
+    # Install dependencies and set up environment
     print("🔨 Setting up development environment...")
     run_command("make setup")
+    
+    if precommit_choice.lower() in ('y', 'yes'):
+        print("🔧 Setting up pre-commit hooks...")
+        run_command("uv run pre-commit install")
+    else:
+        print("⏩ Skipping pre-commit hooks setup")
 
     print("✨ Project initialized successfully!")
     print("""
