@@ -34,19 +34,19 @@ clean: clean-pyc clean-test clean-venv
 
 # Testing and Quality Checks
 #########################
-test: clean  # Run pytest with coverage
+test: setup  # Run pytest with coverage
 	uv run -m pytest tests --cov=src --cov-report=term-missing
 
-mypy:  # Run type checking
+mypy: setup  # Run type checking
 	uv run -m mypy src
 
-lint:  # Run ruff linter
+lint: setup  # Run ruff linter
 	uv run -m ruff check src
 
-format:  # Run ruff formatter
+format: setup  # Run ruff formatter
 	uv run -m ruff format src
 
-check: test mypy lint format  # Run all quality checks
+check: setup test mypy lint format  # Run all quality checks
 
 # Project Management
 ##################
