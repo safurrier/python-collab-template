@@ -12,6 +12,19 @@ A modern Python project template with best practices for development and collabo
 - 🐳 Docker support for development and deployment
 - 👷 CI/CD with GitHub Actions
 
+## Python Version
+This template defaults to Python 3.12, but you can use any version supported by uv. To use a different version:
+
+```bash
+# List available Python versions
+uv python list
+
+# Use a specific version (e.g., 3.11)
+UV_PYTHON_VERSION=3.11 make setup
+
+# Or edit pyproject.toml's requires-python field
+```
+
 ## Quickstart
 ```bash
 # Clone this repo and change directory
