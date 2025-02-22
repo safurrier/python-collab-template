@@ -34,9 +34,8 @@ uv will automatically download and manage Python versions as needed.
 git clone git@github.com:safurrier/python-collab-template.git my-project-name
 cd my-project-name
 
-# Install dependencies and run the initialization script
-make setup
-uv run python scripts/init_project.py
+# Initialize a new project
+make init
 
 # Follow the prompts to configure your project
 ```
