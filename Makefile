@@ -1,4 +1,4 @@
-.PHONY: compile-deps setup clean-pyc clean-test clean test mypy lint format check dev-env refresh-containers rebuild-images build-image push-image
+.PHONY: compile-deps setup clean-pyc clean-test clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
 
 compile-deps:
 	uv pip compile pyproject.toml -o requirements.txt
@@ -33,6 +33,10 @@ format:
 	uv pip run ruff format src
 
 check: test mypy lint format
+
+clean-example:
+	rm -rf src/example.py tests/test_example.py
+	touch src/__init__.py tests/__init__.py
 
 
 # Docker
