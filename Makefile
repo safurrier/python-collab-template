@@ -11,11 +11,8 @@ PYTHON_VERSION ?= 3.12
 ensure-uv:  # Install uv if not present
 	@which uv > /dev/null || (curl -LsSf https://astral.sh/uv/install.sh | sh)
 
-ensure-python: ensure-uv  # Install Python if needed
-	@uv python ensure $(PYTHON_VERSION)
-
-setup: ensure-python compile-deps  # Install dependencies
-	uv pip sync requirements.txt requirements-dev.txt
+setup: ensure-uv compile-deps  # Install dependencies
+	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync requirements.txt requirements-dev.txt
 
 # Cleaning
 #########
