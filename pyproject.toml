@@ -5,7 +5,7 @@ description = "Add your description here"
 authors = [
     { name = "alex furrier", email = "afurrier@gmail.com" }
 ]
-requires-python = ">= 3.12"
+requires-python = ">= 3.8"  # More permissive base requirement
 readme = "README.md"
 dependencies = [
     "pandas>=2.2.2",
