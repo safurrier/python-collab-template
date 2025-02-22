@@ -1,4 +1,4 @@
-![Tests](https://github.com/eugeneyan/python-collab-template/workflows/Tests/badge.svg) [![codecov](https://codecov.io/gh/eugeneyan/python-collab-template/branch/master/graph/badge.svg)](https://codecov.io/gh/eugeneyan/python-collab-template)
+![Tests](https://github.com/safurrier/python-collab-template/workflows/Tests/badge.svg) [![codecov](https://codecov.io/gh/safurrier/python-collab-template/branch/master/graph/badge.svg)](https://codecov.io/gh/safurrier/python-collab-template)
 
 # Python Project Template
 
@@ -31,7 +31,7 @@ uv will automatically download and manage Python versions as needed.
 ## Quickstart
 ```bash
 # Clone this repo and change directory
-git clone git@github.com:eugeneyan/python-collab-template.git
+git clone git@github.com:safurrier/python-collab-template.git
 cd python-collab-template
 
 # Install dependencies and set up the environment

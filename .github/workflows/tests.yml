@@ -34,4 +34,10 @@ jobs:
         run: uv pip run ruff format src
         
       - name: Run Tests
-        run: uv pip run pytest tests --cov=src --cov-report=term-missing
+        run: uv pip run pytest tests --cov=src --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
+          fail_ci_if_error: true
