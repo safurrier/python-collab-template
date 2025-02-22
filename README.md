@@ -13,7 +13,7 @@ A modern Python project template with best practices for development and collabo
 - 👷 CI/CD with GitHub Actions
 
 ## Python Version
-This template defaults to Python 3.12, but you can use any version supported by uv. To use a different version:
+This template requires Python 3.9 or higher and defaults to Python 3.12. To use a different version:
 
 ```bash
 # List available Python versions
@@ -41,10 +41,17 @@ make init
 ```
 
 This will:
-- Clean up example code
+- Configure project metadata (name, description, author)
+- Handle example code (keep, simplify, or remove)
 - Initialize a fresh git repository
-- Set up pre-commit hooks
-- Update project metadata
+- Set up development environment
+- Configure pre-commit hooks (optional, enabled by default)
+
+Pre-commit hooks will automatically run these checks before each commit:
+- Type checking (mypy)
+- Linting (ruff)
+- Formatting (ruff)
+- Tests (pytest)
 
 Alternatively, you can set up manually:
 ```bash
