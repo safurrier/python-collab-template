@@ -14,7 +14,6 @@ ensure-uv:  # Install uv if not present
 setup: ensure-uv compile-deps ensure-scripts  # Install dependencies
 	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv venv
 	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync requirements.txt requirements-dev.txt
-	uv run pre-commit install
 
 ensure-scripts:  # Ensure scripts directory exists and files are executable
 	mkdir -p scripts
