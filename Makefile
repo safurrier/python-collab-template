@@ -1,4 +1,4 @@
-.PHONY: compile-deps setup clean-pyc clean-test clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
+.PHONY: compile-deps setup clean-pyc clean-test clean-venv clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
 
 # Development Setup
 #################
@@ -12,7 +12,8 @@ ensure-uv:  # Install uv if not present
 	@which uv > /dev/null || (curl -LsSf https://astral.sh/uv/install.sh | sh)
 
 setup: ensure-uv compile-deps  # Install dependencies
-	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync requirements.txt requirements-dev.txt
+	python -m venv .venv
+	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync --project-dir .venv requirements.txt requirements-dev.txt
 
 # Cleaning
 #########
@@ -26,7 +27,10 @@ clean-test:  # Remove test and coverage artifacts
 	rm -f .coverage
 	rm -f .coverage.*
 
-clean: clean-pyc clean-test
+clean-venv:  # Remove virtual environment
+	rm -rf .venv
+
+clean: clean-pyc clean-test clean-venv
 
 # Testing and Quality Checks
 #########################
