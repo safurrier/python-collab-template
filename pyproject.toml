@@ -5,23 +5,16 @@ description = "Add your description here"
 authors = [
     { name = "alex furrier", email = "afurrier@gmail.com" }
 ]
-requires-python = ">= 3.8"  # More permissive base requirement
+requires-python = ">= 3.8"
 readme = "README.md"
-dependencies = [
-    "pandas>=2.2.2",
-    "numpy>=1.26.4",
-]
+dependencies = []  # No runtime dependencies needed for example
 
 [project.optional-dependencies]
 dev = [
-    "codecov>=2.1.13",
-    "pre-commit>=3.7.0",
-    "mypy>=1.9.0",
-    "pytest>=8.1.1",
-    "pytest-cov>=5.0.0",
-    "sphinx>=7.2.6",
-    "pandas-stubs>=2.2.1.240316",
-    "ruff>=0.3.0",
+    "mypy>=1.9.0",      # Type checking
+    "pytest>=8.1.1",    # Testing
+    "pytest-cov>=5.0.0", # Coverage reporting
+    "ruff>=0.3.0",      # Linting and formatting
 ]
 
 [build-system]
