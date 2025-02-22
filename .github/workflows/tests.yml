@@ -5,26 +5,33 @@ on:
   pull_request:
 
 jobs:
-  precommit:
+  checks:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Rye
-        uses: eifinger/setup-rye@v2
-
-      - name: Sync Rye
-        run: rye sync
-
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          
+      - name: Install uv
+        run: pip install uv
+        
+      - name: Install dependencies
+        run: |
+          uv pip compile pyproject.toml -o requirements.txt
+          uv pip compile pyproject.toml --extra dev -o requirements-dev.txt
+          uv pip sync requirements.txt requirements-dev.txt
+          
       - name: Run MyPy
-        run: rye run mypy src
-
+        run: uv pip run mypy src
+        
       - name: Run Linter
-        run: rye lint src
-
+        run: uv pip run ruff check src
+        
       - name: Run Formatter
-        run: rye format src
-
+        run: uv pip run ruff format src
+        
       - name: Run Tests
-        run: rye run py.test tests --cov=src --cov-report=term-missing
+        run: uv pip run pytest tests --cov=src --cov-report=term-missing

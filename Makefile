@@ -1,8 +1,6 @@
-install-rye:
-	curl -sSf https://rye-up.com/get | bash
-
 setup:
-	rye sync
+	pip install uv
+	uv pip sync requirements.txt requirements-dev.txt
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
@@ -16,26 +14,19 @@ clean-test:
 
 clean: clean-pyc clean-test
 
-test: clean setup
-	rye run py.test tests --cov=src --cov-report=term-missing
+test: clean
+	uv pip run pytest tests --cov=src --cov-report=term-missing
 
 mypy:
-	rye run mypy src
+	uv pip run mypy src
 
 lint:
-	rye lint src
+	uv pip run ruff check src
 
 format:
-	rye format src
+	uv pip run ruff format src
 
-# TODO: Sphinx not working with Rye yet
-# docs: FORCE
-# 	cd docs; rye run sphinx-apidoc -o ./source ./src
-# 	cd docs; rye run sphinx-build -b html ./source ./build
-
-FORCE:
-
-check: setup test mypy format lint
+check: test mypy lint format
 
 
 # Docker
