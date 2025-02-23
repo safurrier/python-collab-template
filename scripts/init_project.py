@@ -115,13 +115,18 @@ def test_add():
         author_email
     )
 
-    # Initialize new git repository
-    print("🔄 Reinitializing git repository...")
-    if os.path.exists(".git"):
-        run_command("rm -rf .git")
-    run_command("git init")
-    run_command("git add .")
-    run_command('git commit -m "feat: Initial project setup"')
+    # Get current directory name and handle renaming
+    current_dir = os.path.basename(os.getcwd())
+    if current_dir == "python-collab-template" or current_dir == "python-project-test":
+        parent_dir = os.path.dirname(os.getcwd())
+        new_dir = os.path.join(parent_dir, project_name)
+        print(f"📁 Renaming project directory to {project_name}...")
+        if os.path.exists(new_dir):
+            print(f"⚠️  Directory {project_name} already exists. Keeping current directory name.")
+        else:
+            os.chdir(parent_dir)
+            os.rename(current_dir, project_name)
+            os.chdir(project_name)
 
     # Install dependencies and set up environment
     print("🔨 Setting up development environment...")
@@ -139,7 +144,7 @@ def test_add():
     )
     
     # Initialize new git repository
-    print("🔄 Reinitializing git repository...")
+    print("🔄 Initializing git repository...")
     if os.path.exists(".git"):
         run_command("rm -rf .git")
     run_command("git init")
