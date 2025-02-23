@@ -1,42 +1,71 @@
-install-rye:
-	curl -sSf https://rye-up.com/get | bash
+.PHONY: compile-deps setup clean-pyc clean-test clean-venv clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
 
-setup:
-	rye sync
+# Development Setup
+#################
+compile-deps:  # Compile dependencies from pyproject.toml
+	uv pip compile pyproject.toml -o requirements.txt
+	uv pip compile pyproject.toml --extra dev -o requirements-dev.txt
 
-clean-pyc:
+PYTHON_VERSION ?= 3.12
+
+ensure-uv:  # Install uv if not present
+	@which uv > /dev/null || (curl -LsSf https://astral.sh/uv/install.sh | sh)
+
+setup: ensure-uv compile-deps ensure-scripts install-hooks  # Install dependencies
+	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv venv
+	UV_PYTHON_VERSION=$(PYTHON_VERSION) uv pip sync requirements.txt requirements-dev.txt
+
+install-hooks:  # Install pre-commit hooks if in a git repo with hooks configured
+	@if [ -d .git ] && [ -f .pre-commit-config.yaml ]; then \
+		echo "Installing pre-commit hooks..."; \
+		uv run pre-commit install; \
+	fi
+
+ensure-scripts:  # Ensure scripts directory exists and files are executable
+	mkdir -p scripts
+	chmod +x scripts/*.py
+
+# Cleaning
+#########
+clean-pyc:  # Remove Python compilation artifacts
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test:
+clean-test:  # Remove test and coverage artifacts
 	rm -f .coverage
 	rm -f .coverage.*
 
-clean: clean-pyc clean-test
+clean-venv:  # Remove virtual environment
+	rm -rf .venv
 
-test: clean setup
-	rye run py.test tests --cov=src --cov-report=term-missing
+clean: clean-pyc clean-test clean-venv
 
-mypy:
-	rye run mypy src
+# Testing and Quality Checks
+#########################
+test: setup  # Run pytest with coverage
+	uv run -m pytest tests --cov=src --cov-report=term-missing
 
-lint:
-	rye lint src
+mypy: setup  # Run type checking
+	uv run -m mypy src
 
-format:
-	rye format src
+lint: setup  # Run ruff linter
+	uv run -m ruff check src
 
-# TODO: Sphinx not working with Rye yet
-# docs: FORCE
-# 	cd docs; rye run sphinx-apidoc -o ./source ./src
-# 	cd docs; rye run sphinx-build -b html ./source ./build
+format: setup  # Run ruff formatter
+	uv run -m ruff format src
 
-FORCE:
+check: setup test mypy lint format  # Run all quality checks
 
-check: setup test mypy format lint
+# Project Management
+##################
+clean-example:  # Remove example code (use this to start your own project)
+	rm -rf src/example.py tests/test_example.py
+	touch src/__init__.py tests/__init__.py
 
+init: setup  # Initialize a new project
+	uv run python scripts/init_project.py
 
 # Docker
 ########

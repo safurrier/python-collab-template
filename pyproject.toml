@@ -5,30 +5,24 @@ description = "Add your description here"
 authors = [
     { name = "alex furrier", email = "afurrier@gmail.com" }
 ]
-dependencies = [
-    "codecov>=2.1.13",
-    "pre-commit>=3.7.0",
-    "mypy>=1.9.0",
-    "pytest>=8.1.1",
-    "pytest-cov>=5.0.0",
-    "sphinx>=7.2.6",
-    "pandas>=2.2.2",
-    "numpy>=1.26.4",
-    "pandas-stubs>=2.2.1.240316",
-]
+requires-python = ">= 3.9"
 readme = "README.md"
-requires-python = ">= 3.12"
+dependencies = []  # No runtime dependencies needed for example
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.9.0",      # Type checking
+    "pytest>=8.1.1",    # Testing
+    "pytest-cov>=5.0.0", # Coverage reporting
+    "ruff>=0.3.0",      # Linting and formatting
+    "pre-commit>=3.6.0", # Pre-commit hooks
+    "tomli>=2.0.1",     # TOML reading
+    "tomli-w>=1.0.0",   # TOML writing
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.rye]
-managed = true
-dev-dependencies = []
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
 [tool.hatch.build.targets.wheel]
-packages = ["src/python_collab_template"]
+packages = ["src"]

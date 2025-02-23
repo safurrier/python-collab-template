@@ -1,8 +1,7 @@
-FROM python:3.8-slim
+FROM python:3.12-slim
 
 # Install Auxiliary Software
-RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     make \
     apt-utils \
     apt-transport-https \
@@ -12,18 +11,19 @@ RUN apt-get install -y \
     gnupg-agent \
     graphviz \
     software-properties-common \
-    vim
+    vim \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-COPY requirements.dev \
-    requirements.prod \
-    docker/Makefile \
-    README.md \
-    setup.py \
-    mypy.ini \
-    pylintrc \
-    ./
-RUN pip install -U pip
-RUN pip install --requirement requirements.dev
-RUN pip install --requirement requirements.prod
-RUN pip install -e . 
+
+COPY pyproject.toml .
+COPY README.md .
+COPY src/ ./src/
+COPY tests/ ./tests/
+
+RUN pip install -U pip uv \
+    && uv pip compile pyproject.toml -o requirements.txt \
+    && uv pip compile pyproject.toml --extra dev -o requirements-dev.txt \
+    && uv pip sync requirements.txt requirements-dev.txt
+
+CMD ["/bin/bash"]

@@ -41,15 +41,3 @@ services:
         source: ../README.md
         target: /src/README.md
         read_only: False
-      - type: bind
-        source: ../requirements.dev
-        target: /src/requirements.dev
-        read_only: False
-      - type: bind
-        source: ../requirements.prod
-        target: /src/requirements.prod
-        read_only: False
-      - type: bind
-        source: ../setup.py
-        target: /src/setup.py
-        read_only: False
