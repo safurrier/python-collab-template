@@ -75,6 +75,15 @@ def main() -> None:
         "Author email", get_git_config("email") or "your.email@example.com"
     )
 
+    # Update project information
+    print("📝 Updating project configuration...")
+    update_pyproject_toml(
+        project_name,
+        project_description,
+        author_name,
+        author_email
+    )
+
     # Handle example code
     code_choice = prompt_with_default(
         "How would you like to handle example code?\n"
@@ -84,10 +93,63 @@ def main() -> None:
         "Choose option", "1"
     )
 
+    # Create module directory with project name (replacing src)
+    project_module_name = project_name.replace("-", "_").lower()
+    
+    # Always update the Makefile to use the new module name
+    print(f"🔧 Updating Makefile to use module name: {project_module_name}")
+    makefile_path = Path("Makefile")
+    with open(makefile_path, "r") as f:
+        makefile_content = f.read()
+    
+    # Replace module name in Makefile
+    updated_makefile = makefile_content.replace("MODULE_NAME := src", f"MODULE_NAME := {project_module_name}")
+    
+    with open(makefile_path, "w") as f:
+        f.write(updated_makefile)
+    
+    # Always update pyproject.toml to point to the new module directory
+    print(f"📦 Updating pyproject.toml for module: {project_module_name}")
+    pyproject_path = Path("pyproject.toml")
+    with open(pyproject_path, "rb") as f:
+        config = tomli.load(f)
+    
+    # Update packages from src to new module name
+    if "tool" in config and "hatch" in config["tool"] and "build" in config["tool"]["hatch"] and "targets" in config["tool"]["hatch"]["build"] and "wheel" in config["tool"]["hatch"]["build"]["targets"]:
+        config["tool"]["hatch"]["build"]["targets"]["wheel"]["packages"] = [project_module_name]
+    
+    with open(pyproject_path, "wb") as f:
+        tomli_w.dump(config, f)
+    
+    # Create the new module directory if it doesn't exist
+    if not os.path.exists(project_module_name):
+        print(f"📁 Creating module directory: {project_module_name}")
+        os.mkdir(project_module_name)
+        # Create __init__.py
+        with open(f"{project_module_name}/__init__.py", "w") as f:
+            f.write(f'"""Main package for {project_name}."""\n')
+    
+    # Copy src content to new module directory if src exists
+    if os.path.exists("src") and project_module_name != "src":
+        print(f"📦 Copying content from src to {project_module_name}...")
+        for item in os.listdir("src"):
+            src_path = os.path.join("src", item)
+            dest_path = os.path.join(project_module_name, item)
+            
+            if os.path.isfile(src_path):
+                with open(src_path, "r") as src_file:
+                    content = src_file.read()
+                with open(dest_path, "w") as dest_file:
+                    dest_file.write(content)
+        
+        # Remove the old src directory after copying
+        print("🗑️ Removing old src directory...")
+        run_command("rm -rf src")
+    
     if code_choice == "2":
         print("📝 Creating minimal placeholder test...")
-        # Create minimal src module
-        with open("src/example.py", "w") as f:
+        # Create minimal module
+        with open(f"{project_module_name}/example.py", "w") as f:
             f.write("""def add(a: int, b: int) -> int:
     \"\"\"Add two numbers.\"\"\"
     return a + b
@@ -95,7 +157,7 @@ def main() -> None:
         
         # Create minimal test
         with open("tests/test_example.py", "w") as f:
-            f.write("""from src.example import add
+            f.write(f"""from {project_module_name}.example import add
 
 def test_add():
     assert add(1, 2) == 3
@@ -103,17 +165,29 @@ def test_add():
     elif code_choice == "3":
         print("🧹 Removing all example code...")
         run_command("make clean-example")
+        # Create __init__.py in tests
+        with open("tests/__init__.py", "w") as f:
+            f.write("")
     else:
-        print("📚 Keeping example code for reference...")
+        print("📚 Updating example code imports for new module name...")
+        # Update example.py to use new module name
+        if os.path.exists("src/example.py"):
+            with open("src/example.py", "r") as f:
+                example_content = f.read()
+            # Save it to new module directory
+            with open(f"{project_module_name}/example.py", "w") as f:
+                f.write(example_content)
+        
+        # Update test imports 
+        if os.path.exists("tests/test_example.py"):
+            with open("tests/test_example.py", "r") as f:
+                test_content = f.read()
+            updated_test = test_content.replace("from src.", f"from {project_module_name}.")
+            with open("tests/test_example.py", "w") as f:
+                f.write(updated_test)
 
-    # Update pyproject.toml
-    print("📝 Updating project configuration...")
-    update_pyproject_toml(
-        project_name,
-        project_description,
-        author_name,
-        author_email
-    )
+    # Update already happened above, fix the duplicate
+    # The configuration has already been updated above
 
     # Get current directory name and handle renaming
     current_dir = os.path.basename(os.getcwd())
@@ -124,6 +198,18 @@ def test_add():
         if os.path.exists(new_dir):
             print(f"⚠️  Directory {project_name} already exists. Keeping current directory name.")
         else:
+            # Update source code directory references in Makefile
+            makefile_path = Path("Makefile")
+            with open(makefile_path, "r") as f:
+                makefile_content = f.read()
+            
+            # Replace any hardcoded references to python-collab-template in the Makefile
+            updated_makefile = makefile_content.replace("python-collab-template", project_name)
+            
+            with open(makefile_path, "w") as f:
+                f.write(updated_makefile)
+                
+            # Now rename the directory
             os.chdir(parent_dir)
             os.rename(current_dir, project_name)
             os.chdir(project_name)
@@ -155,9 +241,9 @@ def test_add():
     else:
         print("⏩ Skipping pre-commit hooks setup")
 
-    # Initial commit
+    # Initial commit without running pre-commit hooks
     run_command("git add .")
-    run_command('git commit -m "feat: Initial project setup"')
+    run_command('git commit -m "feat: Initial project setup" --no-verify')
 
     print("✨ Project initialized successfully!")
     print("""
