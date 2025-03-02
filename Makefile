@@ -1,5 +1,8 @@
 .PHONY: compile-deps setup clean-pyc clean-test clean-venv clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
 
+# Module name - will be updated by init script
+MODULE_NAME := src
+
 # Development Setup
 #################
 compile-deps:  # Compile dependencies from pyproject.toml
@@ -46,18 +49,18 @@ clean: clean-pyc clean-test clean-venv
 # Testing and Quality Checks
 #########################
 test: setup  # Run pytest with coverage
-	uv run -m pytest tests --cov=src --cov-report=term-missing
+	uv run -m pytest tests --cov=$(MODULE_NAME) --cov-report=term-missing
 
 mypy: setup  # Run type checking
-	uv run -m mypy src
+	uv run -m mypy $(MODULE_NAME)
 
-lint: setup  # Run ruff linter
-	uv run -m ruff check src
+lint: setup  # Run ruff linter with auto-fix
+	uv run -m ruff check --fix $(MODULE_NAME)
 
 format: setup  # Run ruff formatter
-	uv run -m ruff format src
+	uv run -m ruff format $(MODULE_NAME)
 
-check: setup test mypy lint format  # Run all quality checks
+check: setup lint format test mypy  # Run all quality checks
 
 # Project Management
 ##################
