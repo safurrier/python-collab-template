@@ -36,16 +36,16 @@ jobs:
           fi
           
       - name: Run Linter
-        run: uv pip run ruff check --fix ${{ steps.module.outputs.name }}
+        run: uv run -m ruff check --fix ${{ steps.module.outputs.name }}
         
       - name: Run Formatter
-        run: uv pip run ruff format ${{ steps.module.outputs.name }}
+        run: uv run -m ruff format ${{ steps.module.outputs.name }}
         
       - name: Run Tests
-        run: uv pip run pytest tests --cov=${{ steps.module.outputs.name }} --cov-report=term-missing --cov-report=xml
+        run: uv run -m pytest tests --cov=${{ steps.module.outputs.name }} --cov-report=term-missing --cov-report=xml
         
       - name: Run MyPy
-        run: uv pip run mypy ${{ steps.module.outputs.name }}
+        run: uv run -m mypy ${{ steps.module.outputs.name }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
