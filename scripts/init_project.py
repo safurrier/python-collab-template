@@ -58,6 +58,81 @@ def run_command(command: str) -> None:
         sys.exit(1)
 
 
+def template_file(template_path: str, output_path: str, replacements: dict) -> None:
+    """Template a file by replacing placeholders with values."""
+    with open(template_path, "r") as f:
+        content = f.read()
+    
+    for placeholder, value in replacements.items():
+        content = content.replace(f"{{{placeholder}}}", value)
+    
+    # Ensure parent directory exists
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    with open(output_path, "w") as f:
+        f.write(content)
+
+
+def setup_documentation(
+    project_name: str,
+    project_description: str,
+    author_name: str,
+    author_email: str,
+    project_module_name: str,
+    github_username: str = "your-username"
+) -> None:
+    """Set up documentation with MkDocs + Material theme."""
+    print("📚 Setting up documentation...")
+    
+    # Define template replacements
+    replacements = {
+        "project_name": project_name,
+        "project_description": project_description,
+        "author_name": author_name,
+        "author_email": author_email,
+        "project_module_name": project_module_name,
+        "github_username": github_username,
+    }
+    
+    # Template and create documentation files
+    template_file("templates/mkdocs.yml.template", "mkdocs.yml", replacements)
+    template_file("templates/docs/index.md.template", "docs/index.md", replacements)
+    template_file("templates/docs/getting-started.md.template", "docs/getting-started.md", replacements)
+    template_file("templates/docs/reference/api.md.template", "docs/reference/api.md", replacements)
+    template_file("templates/.github/workflows/docs.yml.template", ".github/workflows/docs.yml", replacements)
+    
+    # Add documentation dependencies to pyproject.toml
+    pyproject_path = Path("pyproject.toml")
+    with open(pyproject_path, "rb") as f:
+        config = tomli.load(f)
+    
+    # Ensure dependency-groups exists
+    if "dependency-groups" not in config:
+        config["dependency-groups"] = {}
+    
+    # Add docs dependencies to dev group
+    if "dev" not in config["dependency-groups"]:
+        config["dependency-groups"]["dev"] = []
+    
+    docs_deps = [
+        "mkdocs-material>=9.6.14",
+        "mkdocstrings[python]>=0.26.1",
+    ]
+    
+    for dep in docs_deps:
+        if dep not in config["dependency-groups"]["dev"]:
+            config["dependency-groups"]["dev"].append(dep)
+    
+    with open(pyproject_path, "wb") as f:
+        tomli_w.dump(config, f)
+    
+    print("✅ Documentation setup complete")
+    print("   - MkDocs configuration created")
+    print("   - Documentation structure created")
+    print("   - GitHub Actions workflow added")
+    print("   - Dependencies added to pyproject.toml")
+
+
 def main() -> None:
     print("🚀 Initializing new Python project...")
 
@@ -186,8 +261,44 @@ def test_add():
             with open("tests/test_example.py", "w") as f:
                 f.write(updated_test)
 
-    # Update already happened above, fix the duplicate
-    # The configuration has already been updated above
+    # Documentation setup
+    docs_choice = prompt_with_default(
+        "\nWould you like to set up documentation with MkDocs?\n"
+        "This includes:\n"
+        "- Material theme documentation site\n"
+        "- Auto-generated API documentation\n"
+        "- GitHub Pages deployment\n"
+        "- Local development server\n"
+        "\nSet up documentation? (Y/n)", "y"
+    )
+    
+    if docs_choice.lower() in ('y', 'yes', ''):
+        # Extract GitHub username from git config or use placeholder
+        try:
+            github_url = subprocess.check_output(["git", "config", "remote.origin.url"], text=True).strip()
+            if "github.com" in github_url:
+                # Extract username from GitHub URL
+                if github_url.startswith("git@github.com:"):
+                    github_username = github_url.split(":")[1].split("/")[0]
+                elif github_url.startswith("https://github.com/"):
+                    github_username = github_url.split("/")[3]
+                else:
+                    github_username = "your-username"
+            else:
+                github_username = "your-username"
+        except (subprocess.CalledProcessError, IndexError):
+            github_username = "your-username"
+        
+        setup_documentation(
+            project_name,
+            project_description,
+            author_name,
+            author_email,
+            project_module_name,
+            github_username
+        )
+    else:
+        print("⏩ Skipping documentation setup")
 
     # Get current directory name and handle renaming
     current_dir = os.path.basename(os.getcwd())
@@ -246,15 +357,25 @@ def test_add():
     run_command('git commit -m "feat: Initial project setup" --no-verify')
 
     print("✨ Project initialized successfully!")
-    print("""
-Next steps:
-1. Update README.md with your project details
-2. Review and update CHANGELOG.md
-3. Start adding your code in src/
-4. Run 'make check' to verify everything works
-
-Happy coding! 🎉
-""")
+    next_steps = [
+        "1. Update README.md with your project details",
+        "2. Review and update CHANGELOG.md", 
+        f"3. Start adding your code in {project_module_name}/",
+        "4. Run 'make check' to verify everything works"
+    ]
+    
+    if docs_choice.lower() in ('y', 'yes', ''):
+        next_steps.extend([
+            "5. Serve documentation locally: 'make docs-serve'",
+            "6. Update docs content in docs/ directory",
+            "7. Enable GitHub Pages in repository settings for automatic deployment"
+        ])
+    
+    print("\nNext steps:")
+    for step in next_steps:
+        print(step)
+    
+    print("\nHappy coding! 🎉")
 
 
 if __name__ == "__main__":
