@@ -1,4 +1,4 @@
-.PHONY: compile-deps setup clean-pyc clean-test clean-venv clean test mypy lint format check clean-example dev-env refresh-containers rebuild-images build-image push-image
+.PHONY: compile-deps setup clean-pyc clean-test clean-venv clean test mypy lint format check clean-example docs-install docs-build docs-serve docs-check docs-clean dev-env refresh-containers rebuild-images build-image push-image
 
 # Module name - will be updated by init script
 MODULE_NAME := src
@@ -61,6 +61,55 @@ format: setup  # Run ruff formatter
 	uv run -m ruff format $(MODULE_NAME)
 
 check: setup lint format test mypy  # Run all quality checks
+
+# Documentation
+###############
+DOCS_PORT ?= 8000
+
+docs-install: setup  ## Install documentation dependencies
+	@echo "Installing documentation dependencies..."
+	uv sync --group dev
+	@echo "Documentation dependencies installed"
+
+docs-build: docs-install  ## Build documentation site
+	@echo "Building documentation..."
+	uv run mkdocs build --strict
+	@echo "Documentation built successfully"
+	@echo "📄 Site location: site/"
+	@echo "🌐 Open site/index.html in your browser to view"
+
+docs-serve: docs-install  ## Serve documentation locally with live reload
+	@echo "Starting documentation server with live reload..."
+	@echo "📍 Documentation will be available at:"
+	@echo "   - Local: http://localhost:$(DOCS_PORT)"
+	@echo "🔄 Changes will auto-reload (press Ctrl+C to stop)"
+	@echo ""
+	@echo "💡 To use a different port: make docs-serve DOCS_PORT=9999"
+	uv run mkdocs serve --dev-addr 0.0.0.0:$(DOCS_PORT)
+
+docs-check: docs-build  ## Check documentation build and links
+	@echo "Checking documentation..."
+	@echo "📊 Site size: $$(du -sh site/ | cut -f1)"
+	@echo "📄 Pages built: $$(find site/ -name "*.html" | wc -l)"
+	@echo "🔗 Checking for common issues..."
+	@if grep -r "404" site/ >/dev/null 2>&1; then \
+		echo "⚠️  Found potential 404 errors"; \
+	else \
+		echo "✅ No obvious 404 errors found"; \
+	fi
+	@if find site/ -name "*.html" -size 0 | grep -q .; then \
+		echo "⚠️  Found empty HTML files"; \
+		find site/ -name "*.html" -size 0; \
+	else \
+		echo "✅ No empty HTML files found"; \
+	fi
+	@echo "Documentation check complete"
+
+docs-clean:  ## Clean documentation build files
+	@echo "Cleaning documentation build files..."
+	rm -rf site/
+	rm -rf .cache/
+	@echo "Documentation cleaned"
 
 # Project Management
 ##################
