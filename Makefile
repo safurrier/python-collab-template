@@ -65,8 +65,8 @@ check: setup lint format test mypy  # Run all quality checks
 # Project Management
 ##################
 clean-example:  # Remove example code (use this to start your own project)
-	rm -rf src/example.py tests/test_example.py
-	touch src/__init__.py tests/__init__.py
+	rm -rf $(MODULE_NAME)/example.py tests/test_example.py
+	touch $(MODULE_NAME)/__init__.py tests/__init__.py
 
 init: setup  # Initialize a new project
 	uv run python scripts/init_project.py
