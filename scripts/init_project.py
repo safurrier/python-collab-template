@@ -66,8 +66,10 @@ def template_file(template_path: str, output_path: str, replacements: dict) -> N
     for placeholder, value in replacements.items():
         content = content.replace(f"{{{placeholder}}}", value)
     
-    # Ensure parent directory exists
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    # Ensure parent directory exists (only if there is a parent directory)
+    parent_dir = os.path.dirname(output_path)
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
     
     with open(output_path, "w") as f:
         f.write(content)
@@ -165,7 +167,7 @@ def main() -> None:
         "1. Keep example code (useful for reference)\n"
         "2. Create minimal placeholder test (ensures checks pass)\n"
         "3. Remove all example code (clean slate)\n"
-        "Choose option", "1"
+        "Choose option (1/2/3)", "1"
     )
 
     # Create module directory with project name (replacing src)
@@ -272,7 +274,8 @@ def test_add():
         "\nSet up documentation? (Y/n)", "y"
     )
     
-    if docs_choice.lower() in ('y', 'yes', ''):
+    docs_enabled = docs_choice.lower() in ('y', 'yes', '')
+    if docs_enabled:
         # Extract GitHub username from git config or use placeholder
         try:
             github_url = subprocess.check_output(["git", "config", "remote.origin.url"], text=True).strip()
@@ -364,7 +367,7 @@ def test_add():
         "4. Run 'make check' to verify everything works"
     ]
     
-    if docs_choice.lower() in ('y', 'yes', ''):
+    if docs_enabled:
         next_steps.extend([
             "5. Serve documentation locally: 'make docs-serve'",
             "6. Update docs content in docs/ directory",
