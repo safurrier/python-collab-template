@@ -1,7 +1,7 @@
-from typing import List, Optional
 import statistics
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 
 @dataclass
@@ -14,8 +14,8 @@ class DataPoint:
 
 
 def calculate_moving_average(
-    data: List[DataPoint], window_size: int = 3
-) -> List[float]:
+    data: list[DataPoint], window_size: int = 3
+) -> list[float]:
     """Calculate moving average of values.
 
     Args:
