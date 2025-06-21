@@ -195,6 +195,10 @@ def main() -> None:
     if "tool" in config and "hatch" in config["tool"] and "build" in config["tool"]["hatch"] and "targets" in config["tool"]["hatch"]["build"] and "wheel" in config["tool"]["hatch"]["build"]["targets"]:
         config["tool"]["hatch"]["build"]["targets"]["wheel"]["packages"] = [project_module_name]
     
+    # Update ruff known-first-party if ruff config exists
+    if "tool" in config and "ruff" in config["tool"] and "lint" in config["tool"]["ruff"] and "isort" in config["tool"]["ruff"]["lint"]:
+        config["tool"]["ruff"]["lint"]["isort"]["known-first-party"] = [project_module_name]
+    
     with open(pyproject_path, "wb") as f:
         tomli_w.dump(config, f)
     
