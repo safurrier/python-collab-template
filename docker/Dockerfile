@@ -24,6 +24,6 @@ COPY tests/ ./tests/
 RUN pip install -U pip uv \
     && uv pip compile pyproject.toml -o requirements.txt \
     && uv pip compile pyproject.toml --extra dev -o requirements-dev.txt \
-    && uv pip sync requirements.txt requirements-dev.txt
+    && uv pip sync --system requirements.txt requirements-dev.txt
 
 CMD ["/bin/bash"]

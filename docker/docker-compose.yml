@@ -11,36 +11,7 @@ services:
       EXAMPLE: ${EXAMPLE}
       EXAMPLE_SECRET: ${EXAMPLE_SECRET}
     command: /bin/bash
-    # Handle UID/GID for better permission compatibility
-    user: "${UID:-1000}:${GID:-1000}"
-    # Bind to local files
+    # Note: user mapping handled by Podman rootless automatically
+    # Bind whole project directory for simplicity  
     volumes:
-      - type: bind
-        source: ../src
-        target: /src/src
-        read_only: False
-      - type: bind
-        source: ../tests
-        target: /src/tests
-        read_only: False
-      # Container runtime socket (works for both Docker and Podman)
-      - type: bind
-        source: ${DOCKER_SOCK:-/var/run/docker.sock}
-        target: /var/run/docker.sock
-      # Dev files in top level directory
-      - type: bind
-        source: ../docker/Makefile
-        target: /src/Makefile
-        read_only: False
-      - type: bind
-        source: ../mypy.ini
-        target: /src/mypy.ini
-        read_only: False
-      - type: bind
-        source: ../pylintrc
-        target: /src/pylintrc
-        read_only: False
-      - type: bind
-        source: ../README.md
-        target: /src/README.md
-        read_only: False
+      - ../:/workspace:Z
