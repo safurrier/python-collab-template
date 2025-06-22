@@ -124,15 +124,18 @@ init: setup  # Initialize a new project
 ########################
 # Auto-detect container engine (podman or docker)
 CONTAINER_ENGINE ?= $(shell command -v podman >/dev/null 2>&1 && echo podman || echo docker)
-COMPOSE_CMD = $(CONTAINER_ENGINE) compose
 
 # Podman-specific adjustments
 ifeq ($(CONTAINER_ENGINE),podman)
+    # Use podman-compose for compose functionality
+    COMPOSE_CMD = podman-compose
     # Use host UID/GID for rootless containers
     CONTAINER_USER_OPTS = --userns=keep-id
-    # Podman may need explicit socket path
-    export DOCKER_HOST ?= unix://$(XDG_RUNTIME_DIR)/podman/podman.sock
+    # Podman machine status check
+    PODMAN_MACHINE_RUNNING = $(shell podman machine list --format json 2>/dev/null | grep '"Running": true' >/dev/null && echo yes || echo no)
 else
+    # Docker: use native compose
+    COMPOSE_CMD = $(CONTAINER_ENGINE) compose
     # Docker: use current user's UID/GID to avoid permission issues
     CONTAINER_USER_OPTS = --user $(shell id -u):$(shell id -g)
 endif
@@ -142,13 +145,13 @@ endif
 IMAGE_NAME = container-registry.io/python-collab-template
 IMAGE_TAG = latest
 
-dev-env: refresh-containers
+dev-env: ensure-container-ready refresh-containers
 	@echo "Spinning up a dev environment using $(CONTAINER_ENGINE)..."
 	@$(COMPOSE_CMD) -f docker/docker-compose.yml down
 	@$(COMPOSE_CMD) -f docker/docker-compose.yml up -d dev
 	@$(CONTAINER_ENGINE) exec -ti composed_dev /bin/bash
 
-refresh-containers:
+refresh-containers: ensure-container-ready
 	@echo "Rebuilding containers using $(CONTAINER_ENGINE)..."
 	@$(COMPOSE_CMD) -f docker/docker-compose.yml build
 
@@ -168,9 +171,30 @@ push-image: build-image
 
 # Container Engine Info
 ######################
+ensure-container-ready:  # Ensure container engine is ready
+ifeq ($(CONTAINER_ENGINE),podman)
+	@echo "Checking Podman machine status..."
+	@if [ "$(PODMAN_MACHINE_RUNNING)" = "no" ]; then \
+		echo "Podman machine is not running. Starting it..."; \
+		podman machine start; \
+		echo "Waiting for Podman machine to be ready..."; \
+		sleep 3; \
+	fi
+	@if ! command -v podman-compose >/dev/null 2>&1; then \
+		echo "Error: podman-compose not found. Install with: brew install podman-compose"; \
+		exit 1; \
+	fi
+else
+	@echo "Using Docker engine..."
+endif
+
 container-info:  # Display detected container engine and configuration
 	@echo "Container Engine: $(CONTAINER_ENGINE)"
 	@echo "Compose Command: $(COMPOSE_CMD)"
 	@echo "User Options: $(CONTAINER_USER_OPTS)"
+ifeq ($(CONTAINER_ENGINE),podman)
+	@echo "Podman Machine Running: $(PODMAN_MACHINE_RUNNING)"
+	@echo "podman-compose Available: $(shell command -v podman-compose >/dev/null 2>&1 && echo yes || echo no)"
+endif
 	@echo ""
 	@echo "To override, use: CONTAINER_ENGINE=podman make dev-env"

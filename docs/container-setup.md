@@ -62,7 +62,7 @@ echo "DOCKER_SOCK=${XDG_RUNTIME_DIR}/podman/podman.sock" >> docker/.env
 
 ### Compose Command Not Found
 
-For Podman, you may need to install podman-compose:
+For Podman, you need to install podman-compose:
 
 ```bash
 # macOS
@@ -71,3 +71,32 @@ brew install podman-compose
 # Linux
 pip install podman-compose
 ```
+
+### Podman Machine Not Running (macOS/Windows)
+
+Podman needs a Linux VM to run containers. The Makefile will automatically start it, but you can also manage it manually:
+
+```bash
+# Initialize a new machine
+podman machine init
+
+# Start the machine
+podman machine start
+
+# Check machine status
+podman machine list
+
+# Stop the machine
+podman machine stop
+```
+
+### Auto-Setup with Make
+
+The project's Makefile handles most Podman setup automatically:
+
+- Checks if Podman machine is running
+- Starts it if needed
+- Verifies podman-compose is installed
+- Uses appropriate socket paths
+
+Just run `make container-info` to see the current status.
