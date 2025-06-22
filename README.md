@@ -87,17 +87,28 @@ To remove the example code and start fresh:
 ```bash
 make clean-example
 ```
-## Docker Support
+## Container Support (Docker/Podman)
 
 ### Development Environment
+
+The project automatically detects and uses either Docker or Podman:
+
 ```bash
-make dev-env    # Start a development container
+make dev-env    # Uses podman if available, otherwise docker
+
+# Or explicitly choose:
+CONTAINER_ENGINE=docker make dev-env
+CONTAINER_ENGINE=podman make dev-env
+
+# Check which engine will be used:
+make container-info
 ```
 
 This creates a container with:
 - All dependencies installed
 - Source code mounted (changes reflect immediately)
 - Development tools ready to use
+- Automatic UID/GID mapping for file permissions
 
 ### Production Image
 ```bash
@@ -110,7 +121,7 @@ make push-image     # Push to container registry
 .
 ├── src/                # Source code
 ├── tests/             # Test files
-├── docker/            # Docker configuration
+├── docker/            # Container configuration (Docker/Podman)
 ├── .github/           # GitHub Actions workflows
 ├── pyproject.toml     # Project configuration
 └── Makefile          # Development commands

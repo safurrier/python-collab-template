@@ -14,16 +14,17 @@ RUN apt-get update && apt-get install -y \
     vim \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /src
+WORKDIR /workspace
 
-COPY pyproject.toml .
-COPY README.md .
-COPY src/ ./src/
-COPY tests/ ./tests/
+# Copy essential files for dependency resolution to temp location
+COPY pyproject.toml /tmp/
+COPY README.md /tmp/
 
 RUN pip install -U pip uv \
+    && cd /tmp \
     && uv pip compile pyproject.toml -o requirements.txt \
     && uv pip compile pyproject.toml --extra dev -o requirements-dev.txt \
-    && uv pip sync requirements.txt requirements-dev.txt
+    && uv pip sync --system requirements.txt requirements-dev.txt \
+    && rm -rf /tmp/pyproject.toml /tmp/README.md
 
 CMD ["/bin/bash"]
