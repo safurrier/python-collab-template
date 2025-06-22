@@ -100,3 +100,39 @@ The project's Makefile handles most Podman setup automatically:
 - Uses appropriate socket paths
 
 Just run `make container-info` to see the current status.
+
+## Compatibility with Project Initialization
+
+The container setup is designed to work both before and after running `make init`:
+
+### Before `make init`
+- Source code is in `src/` directory
+- Container mounts entire project as `/workspace`
+- All development tools work normally
+
+### After `make init` 
+- Source code moves to your project module directory (e.g., `my_project/`)
+- Container setup continues to work unchanged
+- Volume mounts and dependencies remain intact
+
+The `make init` command:
+1. Renames `src/` to your project name
+2. Updates import statements in tests
+3. Modifies `pyproject.toml` and `Makefile`
+
+**The Docker/Podman setup survives this transformation** because:
+- The Dockerfile doesn't hardcode directory names
+- Dependencies are installed from temporary copied files
+- The entire project is mounted, regardless of internal structure
+
+This means you can:
+```bash
+# Set up development environment
+make dev-env
+
+# Initialize your project later
+make init
+
+# Continue using the same development environment
+make dev-env  # Still works!
+```
