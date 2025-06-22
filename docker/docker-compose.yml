@@ -11,6 +11,8 @@ services:
       EXAMPLE: ${EXAMPLE}
       EXAMPLE_SECRET: ${EXAMPLE_SECRET}
     command: /bin/bash
+    # Handle UID/GID for better permission compatibility
+    user: "${UID:-1000}:${GID:-1000}"
     # Bind to local files
     volumes:
       - type: bind
@@ -21,8 +23,9 @@ services:
         source: ../tests
         target: /src/tests
         read_only: False
+      # Container runtime socket (works for both Docker and Podman)
       - type: bind
-        source: /var/run/docker.sock
+        source: ${DOCKER_SOCK:-/var/run/docker.sock}
         target: /var/run/docker.sock
       # Dev files in top level directory
       - type: bind
