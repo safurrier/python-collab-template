@@ -10,6 +10,7 @@ services:
     environment:
       EXAMPLE: ${EXAMPLE}
       EXAMPLE_SECRET: ${EXAMPLE_SECRET}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     command: /bin/bash
     # Note: user mapping handled by Podman rootless automatically
     # Bind whole project directory for simplicity  

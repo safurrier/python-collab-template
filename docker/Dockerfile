@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Install Auxiliary Software
+# Install Auxiliary Software + Node.js for Claude Code
 RUN apt-get update && apt-get install -y \
     make \
     apt-utils \
@@ -12,7 +12,12 @@ RUN apt-get update && apt-get install -y \
     graphviz \
     software-properties-common \
     vim \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Claude Code CLI
+RUN npm install -g @anthropic-ai/claude-code
 
 WORKDIR /workspace
 

@@ -10,6 +10,7 @@ A modern Python project template with best practices for development and collabo
 - 🔍 Type checking with [mypy](https://github.com/python/mypy)
 - 🧪 Testing with [pytest](https://github.com/pytest-dev/pytest)
 - 🐳 Docker support for development and deployment
+- 🤖 Claude Code integration for AI-assisted development
 - 👷 CI/CD with GitHub Actions
 
 ## Python Version
@@ -109,6 +110,34 @@ This creates a container with:
 - Source code mounted (changes reflect immediately)
 - Development tools ready to use
 - Automatic UID/GID mapping for file permissions
+- Claude Code CLI for AI-assisted development
+
+#### Using Claude Code in the Container
+
+1. Set up your API key:
+```bash
+# Copy the environment template
+cp docker/template.env docker/.env
+
+# Add your Anthropic API key to docker/.env
+echo "ANTHROPIC_API_KEY=your_api_key_here" >> docker/.env
+```
+
+2. Start the development environment:
+```bash
+make dev-env
+```
+
+3. Inside the container, use Claude Code:
+```bash
+# Interactive mode (asks for permission before each action)
+claude
+
+# Autonomous mode (runs without permission prompts)
+claude --dangerously-skip-permissions
+```
+
+**Note**: The `--dangerously-skip-permissions` flag allows Claude to work autonomously. Use with caution and always review changes before committing.
 
 ### Production Image
 ```bash
