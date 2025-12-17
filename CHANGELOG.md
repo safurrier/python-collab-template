@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - pytest with coverage reporting
 - GitHub Actions workflow for automated testing
 - Docker development environment improvements
+- Local CI testing with act for running GitHub Actions workflows locally
+- Fast debug workflow for iterative development
+- Make targets: `act-install`, `ci-list`, `ci-local`, `ci-local-docs`, `ci-debug`, `ci-clean`
 
 ### Changed
 - Switched from pip/venv to uv for environment management

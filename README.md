@@ -76,6 +76,66 @@ make lint       # Run linter
 make format     # Run code formatter
 ```
 
+### Local CI Testing
+
+Run GitHub Actions workflows locally before pushing using [act](https://github.com/nektos/act):
+
+```bash
+# Run full test suite locally (auto-installs act if needed)
+make ci-local
+
+# List available workflows
+make ci-list
+
+# Run specific job
+JOB=checks make ci-local
+
+# Run documentation build check
+make ci-local-docs
+
+# Fast debugging (customize .github/workflows/ci-debug.yml)
+make ci-debug
+
+# Clean up act containers
+make ci-clean
+```
+
+**Note:** The first run will automatically install `act` if it's not present.
+
+**Benefits:**
+- 5-20 second feedback vs. 2-5 minutes on GitHub
+- Test before commit/push
+- No GitHub Actions minutes consumed
+- Debug workflows locally
+
+**Troubleshooting:**
+
+*Linux: Docker permissions*
+```bash
+# Add your user to the docker group
+sudo usermod -aG docker $USER
+
+# Log out and back in for changes to take effect
+# Or run: newgrp docker
+
+# Verify it works
+docker ps
+```
+
+*macOS: Colima disk lock errors*
+```bash
+# If you get "disk in use" or similar errors:
+colima stop
+colima delete
+colima start
+```
+
+*General: Stale act containers*
+```bash
+# Clean up old containers and images
+make ci-clean
+```
+
 ### Example Code
 The repository includes a simple example showing:
 - Type hints
