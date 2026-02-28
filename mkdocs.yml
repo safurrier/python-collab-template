@@ -1,0 +1,53 @@
+site_name: Claude PR Agents
+site_description: Reusable GitHub Actions workflows for AI-powered PR automation using Claude
+site_url: https://safurrier.github.io/python-collab-template/
+repo_url: https://github.com/safurrier/python-collab-template
+repo_name: safurrier/python-collab-template
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - User Stories: user-stories.md
+  - Using in Your Repo: using.md
+  - Agents:
+    - Overview: agents/index.md
+    - PR Code Review: agents/pr-review.md
+    - Context Files: agents/context-files.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true

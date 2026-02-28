@@ -2,7 +2,6 @@
 .idea/
 .vs_code/*
 .aider*
-CLAUDE.md
 
 # GitHub Actions local runner (act)
 .actrc

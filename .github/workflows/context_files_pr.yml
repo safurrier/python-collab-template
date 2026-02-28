@@ -1,0 +1,21 @@
+name: Context files agent (PR opened / Draft->Ready)
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+concurrency:
+  group: context-files-agent-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  context-files:
+    if: ${{ github.event.pull_request.draft == false }}
+    uses: safurrier/python-collab-template/.github/workflows/context_files_agent.yml@v1
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    # Optional: pass explicit mode/scope or a full prompt override:
+    # with:
+    #   agent_args: "auto src/"
+    #   prompt_override: |
+    #     <custom prompt text>
