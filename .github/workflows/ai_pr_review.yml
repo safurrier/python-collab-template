@@ -1,0 +1,20 @@
+name: Claude PR scan (Draft->Ready + Push)
+
+on:
+  pull_request:
+    types: [ready_for_review, synchronize, reopened]
+
+concurrency:
+  group: claude-pr-scan-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    if: ${{ github.event.pull_request.draft == false }}
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    # Optional: override prompt per repo:
+    # with:
+    #   prompt_override: |
+    #     <custom prompt text>

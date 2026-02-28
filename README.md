@@ -1,198 +1,101 @@
-![Code Quality Checks](https://github.com/safurrier/python-collab-template/workflows/Code%20Quality%20Checks/badge.svg) [![codecov](https://codecov.io/gh/safurrier/python-collab-template/branch/master/graph/badge.svg)](https://codecov.io/gh/safurrier/python-collab-template)
+# Claude PR BugScan
 
-# Python Project Template
+Reusable GitHub Actions workflow that runs [Claude Code Action](https://github.com/anthropics/claude-code-action) to review PR diffs using the official Codex Code Review prompt.
 
-A modern Python project template with best practices for development and collaboration.
+## What this does
 
-## Features
-- 🚀 Fast dependency management with [uv](https://github.com/astral-sh/uv)
-- ✨ Code formatting with [ruff](https://github.com/astral-sh/ruff)
-- 🔍 Type checking with [ty](https://astral.sh/blog/ty)
-- 🧪 Testing with [pytest](https://github.com/pytest-dev/pytest)
-- 🐳 Docker support for development and deployment
-- 👷 CI/CD with GitHub Actions
+- Automatically reviews PRs when they transition from **Draft → Ready for review**
+- Re-runs on **new commits pushed** to an open PR
+- Skips draft PRs entirely
+- Posts review output back to the PR as comments
+- Uses the [official Codex Code Review prompt](https://developers.openai.com/cookbook/examples/codex/build_code_review_with_codex_sdk/) verbatim
 
-## Python Version
-This template requires Python 3.9 or higher and defaults to Python 3.12. To use a different version:
+## Repository layout
 
-```bash
-# List available Python versions
-uv python list
-
-# Use a specific version (e.g., 3.11)
-make setup PYTHON_VERSION=3.11  # or UV_PYTHON_VERSION=3.11 make setup
-
-# View installed Python versions
-uv python list --installed
+```
+.github/workflows/
+  claude_pr_review.yml   # Reusable workflow (workflow_call)
+  ai_pr_review.yml       # Caller workflow for this repo (example)
+prompts/
+  codex_code_review_prompt.md   # Official Codex prompt text (verbatim)
 ```
 
-uv will automatically download and manage Python versions as needed.
+## Using this in another repo
 
-## Quickstart
-```bash
-# Clone this repo and change directory
-git clone git@github.com:safurrier/python-collab-template.git my-project-name
-cd my-project-name
+### 1. Add the caller workflow
 
-# Initialize a new project
-make init
+Create `.github/workflows/ai_pr_review.yml` in your target repo:
 
-# Follow the prompts to configure your project
+```yaml
+name: Claude PR scan (Draft->Ready + Push)
+
+on:
+  pull_request:
+    types: [ready_for_review, synchronize, reopened]
+
+concurrency:
+  group: claude-pr-scan-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    if: ${{ github.event.pull_request.draft == false }}
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-This will:
-- Configure project metadata (name, description, author)
-- Handle example code (keep, simplify, or remove)
-- Initialize a fresh git repository
-- Set up development environment
-- Configure pre-commit hooks (optional, enabled by default)
+### 2. Add the secret
 
-Pre-commit hooks will automatically run these checks before each commit:
-- Type checking (ty)
-- Linting (ruff)
-- Formatting (ruff)
-- Tests (pytest)
+In your target repo: **Settings → Secrets and variables → Actions → New repository secret**
 
-Alternatively, you can set up manually:
-```bash
-# Install dependencies and set up the environment
-make setup
+- Name: `ANTHROPIC_API_KEY`
+- Value: your Anthropic API key
 
-# Run the suite of tests and checks
-make check
+### 3. Pin to a release tag
 
-# Optional: Remove example code to start fresh
-make clean-example
+Reference `@v1` (or a specific tag) to pin to a stable version. Check the [releases](../../releases) page for available tags.
+
+## Customizing the prompt
+
+To override the default Codex prompt for a specific repo, pass `prompt_override`:
+
+```yaml
+jobs:
+  scan:
+    if: ${{ github.event.pull_request.draft == false }}
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    with:
+      prompt_override: |
+        <your custom review instructions here>
 ```
 
-## Development Commands
+## Trigger policy
 
-### Quality Checks
-```bash
-make check      # Run all checks (test, ty, lint, format)
-make test       # Run tests with coverage
-make ty         # Run type checking
-make lint       # Run linter
-make format     # Run code formatter
-```
+| Event | Runs? |
+|---|---|
+| PR opened as draft | No (skipped by `if` guard) |
+| Draft PR gets new commits | No (skipped by `if` guard) |
+| PR marked Ready for review | Yes (`ready_for_review`) |
+| New commits pushed to open PR | Yes (`synchronize`) |
+| Closed PR reopened | Yes (`reopened`), skipped if still draft |
 
-### Local CI Testing
+Concurrency is keyed on `github.repository + PR number` so rapid pushes cancel the in-progress scan and start fresh.
 
-Run GitHub Actions workflows locally before pushing using [act](https://github.com/nektos/act):
+## Versioning
 
-```bash
-# Run full test suite locally (auto-installs act if needed)
-make ci-local
+- `v1` — initial release
+- Tag releases with `git tag v1 && git push origin v1`
 
-# List available workflows
-make ci-list
+## Permissions
 
-# Run specific job
-JOB=checks make ci-local
-
-# Run documentation build check
-make ci-local-docs
-
-# Fast debugging (customize .github/workflows/ci-debug.yml)
-make ci-debug
-
-# Clean up act containers
-make ci-clean
-```
-
-**Note:** The first run will automatically install `act` if it's not present.
-
-**Benefits:**
-- 5-20 second feedback vs. 2-5 minutes on GitHub
-- Test before commit/push
-- No GitHub Actions minutes consumed
-- Debug workflows locally
-
-**Troubleshooting:**
-
-*Linux: Docker permissions*
-```bash
-# Add your user to the docker group
-sudo usermod -aG docker $USER
-
-# Log out and back in for changes to take effect
-# Or run: newgrp docker
-
-# Verify it works
-docker ps
-```
-
-*macOS: Colima disk lock errors*
-```bash
-# If you get "disk in use" or similar errors:
-colima stop
-colima delete
-colima start
-```
-
-*General: Stale act containers*
-```bash
-# Clean up old containers and images
-make ci-clean
-```
-
-### Example Code
-The repository includes a simple example showing:
-- Type hints
-- Dataclasses
-- Unit tests
-- Modern Python practices
-
-To remove the example code and start fresh:
-```bash
-make clean-example
-```
-## Container Support (Docker/Podman)
-
-### Development Environment
-
-The project automatically detects and uses either Docker or Podman:
-
-```bash
-make dev-env    # Uses podman if available, otherwise docker
-
-# Or explicitly choose:
-CONTAINER_ENGINE=docker make dev-env
-CONTAINER_ENGINE=podman make dev-env
-
-# Check which engine will be used:
-make container-info
-```
-
-This creates a container with:
-- All dependencies installed
-- Source code mounted (changes reflect immediately)
-- Development tools ready to use
-- Automatic UID/GID mapping for file permissions
-
-### Production Image
-```bash
-make build-image    # Build production image
-make push-image     # Push to container registry
-```
-
-## Project Structure
-```
-.
-├── src/                # Source code
-├── tests/             # Test files
-├── docker/            # Container configuration (Docker/Podman)
-├── .github/           # GitHub Actions workflows
-├── pyproject.toml     # Project configuration
-└── Makefile          # Development commands
-```
-
-## Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run `make check` to ensure all tests pass
-5. Submit a pull request
+The reusable workflow requests only:
+- `contents: read`
+- `pull-requests: write`
+- `issues: write`
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+
+MIT
