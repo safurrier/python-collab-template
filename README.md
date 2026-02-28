@@ -14,17 +14,28 @@ Reusable GitHub Actions workflow that runs [Claude Code Action](https://github.c
 
 ```
 .github/workflows/
-  claude_pr_review.yml   # Reusable workflow (workflow_call)
-  ai_pr_review.yml       # Caller workflow for this repo (example)
+  claude_pr_review.yml   # Reusable workflow (workflow_call) — lives here
+  ai_pr_review.yml       # Caller workflow for this repo (also an example)
 prompts/
   codex_code_review_prompt.md   # Official Codex prompt text (verbatim)
 ```
 
-## Using this in another repo
+## How to use this in another repo
 
-### 1. Add the caller workflow
+This repo acts as the **central workflow host**. Any other repo can call the reusable workflow with three lines — no workflow code to copy or maintain.
 
-Create `.github/workflows/ai_pr_review.yml` in your target repo:
+### 1. Tag this repo first (one-time setup)
+
+```bash
+git tag v1
+git push origin v1
+```
+
+Bump to `v1.1`, `v2`, etc. for future breaking changes.
+
+### 2. Add a two-line caller workflow to each target repo
+
+Create `.github/workflows/ai_pr_review.yml` in the target repo:
 
 ```yaml
 name: Claude PR scan (Draft->Ready + Push)
@@ -45,18 +56,20 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-### 2. Add the secret
+The `uses:` line is the only thing that points back here. Everything else — prompt loading, checkout, Claude invocation — runs inside the reusable workflow in this repo.
 
-In your target repo: **Settings → Secrets and variables → Actions → New repository secret**
+### 3. Add the secret to each target repo
+
+**Settings → Secrets and variables → Actions → New repository secret**
 
 - Name: `ANTHROPIC_API_KEY`
 - Value: your Anthropic API key
 
-### 3. Pin to a release tag
+That's it. Future updates to the prompt or workflow logic only need to be made here; target repos pick them up automatically on the next tagged release.
 
-Reference `@v1` (or a specific tag) to pin to a stable version. Check the [releases](../../releases) page for available tags.
+---
 
-## Customizing the prompt
+## Customizing the prompt per repo
 
 To override the default Codex prompt for a specific repo, pass `prompt_override`:
 
@@ -86,8 +99,11 @@ Concurrency is keyed on `github.repository + PR number` so rapid pushes cancel t
 
 ## Versioning
 
-- `v1` — initial release
-- Tag releases with `git tag v1 && git push origin v1`
+| Tag | Notes |
+|---|---|
+| `v1` | Initial release |
+
+Breaking changes → new major tag (`v2`). Non-breaking improvements → minor tag (`v1.1`).
 
 ## Permissions
 
