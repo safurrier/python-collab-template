@@ -1,6 +1,6 @@
 # Using in Your Repo
 
-Each agent is independent. Add only the ones you want.
+Each skill is independent — add only the ones you want. All skills run through the same generic `claude_pr_agent.yml` workflow.
 
 ## Prerequisites
 
@@ -23,11 +23,11 @@ Future releases follow the same pattern: `v1.1`, `v2`, etc. Target repos stay pi
 
 ---
 
-## Add an agent to a repo
+## Add skills to a repo
 
-### Step 1 — Create the caller workflow file
+### Step 1 — Create the caller workflow
 
-Create `.github/workflows/ai_pr_review.yml` in your target repo with the agents you want. Each agent is a separate job.
+Create `.github/workflows/claude_agents.yml` in your target repo. Each skill is a separate job pointing at the same `claude_pr_agent.yml` workflow.
 
 **Code review only:**
 
@@ -45,7 +45,9 @@ concurrency:
 jobs:
   review:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "codex-code-review"
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
@@ -66,12 +68,15 @@ concurrency:
 jobs:
   context-files:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/context_files_agent.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "context-files"
+      args: "auto ."
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-**Both agents together** — put them in one file as separate jobs:
+**Both skills, sequenced** — review runs first, context-files waits for it:
 
 ```yaml
 name: Claude PR agents
@@ -87,13 +92,19 @@ concurrency:
 jobs:
   review:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "codex-code-review"
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   context-files:
+    needs: review
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/context_files_agent.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "context-files"
+      args: "auto ."
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
@@ -109,58 +120,74 @@ In your target repo: **Settings → Secrets and variables → Actions → New re
 
 ### Step 3 — Open a PR and verify
 
-Open a draft PR, then mark it **Ready for review**. The workflow should appear in the **Actions** tab and Claude should post output to the PR within a minute or two.
+Open a draft PR, then mark it **Ready for review**. The workflow appears in the **Actions** tab and Claude posts output to the PR within a minute or two.
 
 ---
 
-## Customizing a prompt
+## Customization options
 
-Every agent accepts a `prompt_override` input that replaces the default prompt entirely. Use this when you want different review criteria for a specific repo.
+### Use a raw prompt (no skill file)
+
+For a one-off instruction without creating a skill:
+
+```yaml
+with:
+  prompt: |
+    Review this diff for security issues only.
+    Flag any use of eval(), exec(), unsanitized SQL, or raw HTTP calls.
+    Give a pass/fail verdict.
+```
+
+### Use a local skill from the target repo
+
+Target repos can define their own `SKILL.md` files and pass the path:
+
+```yaml
+with:
+  skill: ".claude/skills/team-conventions"   # .claude/skills/team-conventions/SKILL.md
+  # OR
+  skill: "./skills/security-review"          # skills/security-review/SKILL.md
+  # OR
+  skill: "./prompts/quick-check.md"          # flat .md file, no directory
+```
+
+This follows the Claude Code skill convention: paths containing `/` are resolved from the target repo checkout; bare names are resolved from the central repo's `skills/` directory.
+
+### Mix central and local skills
 
 ```yaml
 jobs:
   review:
-    if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
-    secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
     with:
-      prompt_override: |
-        You are reviewing a security-sensitive payments service.
-        Flag any use of eval(), exec(), unsanitized SQL, or raw HTTP calls.
-        Produce a pass/fail verdict with severity ratings.
-```
+      skill: "codex-code-review"          # central repo skill
+    secrets: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
 
-The context files agent additionally accepts `agent_args` to control mode and scope without needing a full override:
-
-```yaml
-jobs:
-  context-files:
-    if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/context_files_agent.yml@v1
-    secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  conventions:
+    needs: review
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
     with:
-      agent_args: "auto src/"   # scope to src/ instead of repo root
+      skill: ".claude/skills/api-conventions"   # target repo local skill
+    secrets: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
 ```
 
 ---
 
 ## Trigger policy reference
 
-| Event | Review agent | Context files agent |
+| Event | Review skill | Context files skill |
 |---|---|---|
 | PR opened as draft | Skipped | Skipped |
 | Draft PR gets new commits | Skipped | Skipped |
 | PR marked Ready for review | Runs | Runs |
 | New commits pushed to open PR | Runs | Not triggered |
-| Closed PR reopened | Runs (if not draft) | Not triggered |
+| Closed PR reopened (non-draft) | Runs | Not triggered |
 | PR first opened (non-draft) | Not triggered | Runs |
 
 ---
 
 ## Private vs public repos
 
-Use `pull_request` (not `pull_request_target`) — this is the correct event for repos without forks. The `ANTHROPIC_API_KEY` secret is accessible to `pull_request` workflows run from branches in the same repo.
+Use `pull_request` (not `pull_request_target`) — correct for repos without forks. The `ANTHROPIC_API_KEY` secret is accessible to `pull_request` workflows from branches in the same repo.
 
-If your central workflow repo (this one) is **private**, target repos must be granted access: **Settings → Actions → Access → Accessible from repositories in your account**.
+If this central workflow repo is **private**, target repos need access: **Settings → Actions → Access → Accessible from repositories in your account**.

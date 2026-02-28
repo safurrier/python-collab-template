@@ -6,8 +6,21 @@ Keeps `AGENTS.md` and `CLAUDE.md` up to date in a repository. When these files a
 
 | File | Path |
 |---|---|
-| Reusable workflow | `.github/workflows/context_files_agent.yml` |
-| Prompt | `prompts/context_files_prompt.md` |
+| Skill | `skills/context-files/SKILL.md` |
+| Workflow (shared) | `.github/workflows/claude_pr_agent.yml` |
+
+## Skill frontmatter
+
+```yaml
+---
+name: context-files
+description: Create, update, or evaluate AGENTS.md and CLAUDE.md files for a repository. Follows WHY/WHAT/HOW structure with validated commands and progressive disclosure.
+argument-hint: "[mode] [scope]"
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+---
+```
+
+The `argument-hint` documents what the `args:` workflow input expects. The frontmatter is stripped at load time — Claude only sees the body.
 
 ## What it does
 
@@ -17,16 +30,16 @@ Claude reads the repo structure, config files, CI workflows, and any existing co
 2. **If files already exist** (`auto` → `update + evaluate` mode): validates commands, removes stale content, improves conciseness, and creates nested `AGENTS.md` files for subdirectories with distinct workflows
 3. **Commits the result** directly to the PR branch so the updated context files are part of the PR
 
-The prompt follows a strict principle: **validate what you write**. Every command in the generated docs is confirmed to exist in Makefiles, CI configs, or package manifests before being included.
+Every command in the generated docs is validated against Makefiles, CI configs, or package manifests before being included.
 
 ## Output files
 
 | File | Role |
 |---|---|
-| `AGENTS.md` | Source of truth for agent onboarding — WHY/WHAT/HOW, validated commands, progressive disclosure pointers |
-| `CLAUDE.md` | Symlink to `AGENTS.md` (Claude Code auto-discovers `CLAUDE.md` files when navigating a repo) |
-| `ai_agent_docs/*.md` | Cross-cutting topic docs (architecture, conventions, etc.) created when content warrants it |
-| `<subdir>/AGENTS.md` | Nested docs for subdirectories with their own distinct tooling |
+| `AGENTS.md` | Source of truth — WHY/WHAT/HOW, validated commands, progressive disclosure pointers |
+| `CLAUDE.md` | Symlink to `AGENTS.md` (Claude Code auto-discovers `CLAUDE.md` files) |
+| `ai_agent_docs/*.md` | Cross-cutting topic docs created when content warrants it |
+| `<subdir>/AGENTS.md` | Nested docs for subdirectories with distinct tooling |
 
 ## Triggers
 
@@ -34,7 +47,7 @@ The prompt follows a strict principle: **validate what you write**. Every comman
 |---|---|
 | PR first opened (non-draft) | Yes |
 | PR marked Ready for review | Yes |
-| New commits pushed to open PR | No (use review agent for that) |
+| New commits pushed to open PR | No |
 | Draft PR | No |
 
 ## Minimal caller workflow
@@ -53,20 +66,24 @@ concurrency:
 jobs:
   context-files:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/context_files_agent.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "context-files"
+      args: "auto ."
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
 ## Customizing scope or mode
 
-Use `agent_args` to change which directory Claude targets or which mode it runs in:
+Pass mode and scope via the `args:` input (substituted for `$ARGUMENTS` in the skill):
 
 ```yaml
 with:
-  agent_args: "auto src/"         # scope to src/ only
-  # agent_args: "quick-start ."  # always generate fresh, never update
-  # agent_args: "evaluate ."     # audit and propose improvements, report in chat
+  skill: "context-files"
+  args: "auto src/"         # scope to src/ only
+  # args: "quick-start ."  # always generate fresh, never update
+  # args: "evaluate ."     # audit and report in chat without writing
 ```
 
 Modes:
@@ -74,17 +91,25 @@ Modes:
 | Mode | Behavior |
 |---|---|
 | `auto` (default) | Generate if missing; update + evaluate if present. No confirmation prompts. |
-| `quick-start` | Always generate from scratch. Asks before overwriting. |
+| `quick-start` | Generate from scratch. Asks before overwriting existing files. |
 | `update` | Update existing files only. |
-| `evaluate` | Audit files against quality principles and propose improvements. |
+| `evaluate` | Audit and propose improvements without modifying files. |
 
-## Full prompt override
+## Use a local skill from the target repo
 
-To replace the entire prompt (e.g., for a simpler or domain-specific context file format):
+Target repos can override the central skill entirely with their own `SKILL.md`:
 
 ```yaml
 with:
-  prompt_override: |
+  skill: ".claude/skills/context-files"   # loads from target repo
+  args: "auto ."
+```
+
+Or use a raw prompt for a simpler custom format:
+
+```yaml
+with:
+  prompt: |
     Look at this repo and create AGENTS.md with:
     1. A one-sentence description of what the repo does
     2. How to run tests
@@ -96,9 +121,7 @@ with:
 
 ```yaml
 permissions:
-  contents: write      # needed to commit AGENTS.md / CLAUDE.md to the branch
+  contents: write      # required: commits AGENTS.md / CLAUDE.md to the branch
   pull-requests: write
   issues: write
 ```
-
-Unlike the review agent, this one needs `contents: write` because it commits files.

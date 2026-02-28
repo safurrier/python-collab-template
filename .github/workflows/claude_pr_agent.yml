@@ -1,0 +1,112 @@
+name: Claude PR agent (skill runner)
+
+on:
+  workflow_call:
+    inputs:
+      skill:
+        description: |
+          Skill to run. Either:
+            - A bare name resolved from this repo's skills/ directory:
+                "codex-code-review"   →  skills/codex-code-review/SKILL.md
+                "context-files"       →  skills/context-files/SKILL.md
+            - A target-repo-relative path to a skill directory or file:
+                ".claude/skills/my-skill"    →  .claude/skills/my-skill/SKILL.md
+                "./skills/my-skill"          →  skills/my-skill/SKILL.md
+                "./skills/my-skill.md"       →  skills/my-skill.md  (flat prompt)
+          Rule: values containing "/" are resolved from the target repo checkout;
+          bare names are resolved from this central workflow repo.
+        type: string
+        required: false
+        default: ""
+      args:
+        description: |
+          Substituted for $ARGUMENTS in the skill body.
+          Example: "auto ." for the context-files skill.
+        type: string
+        required: false
+        default: ""
+      prompt:
+        description: |
+          Raw prompt text used as-is. Alternative to `skill` for quick
+          one-off instructions without a skill file.
+        type: string
+        required: false
+        default: ""
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+
+jobs:
+  run-skill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      # Checkout the *target repository* so Claude can read the codebase.
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+
+      # Checkout this workflow repo to access the skills/ directory.
+      - name: Checkout workflow repo (for skills)
+        uses: actions/checkout@v4
+        with:
+          repository: safurrier/python-collab-template
+          path: _ai_workflows
+
+      - name: Load skill
+        id: skill
+        shell: bash
+        run: |
+          SKILL="${{ inputs.skill }}"
+          ARGS="${{ inputs.args }}"
+          PROMPT="${{ inputs.prompt }}"
+
+          write_output() {
+            echo "text<<EOF" >> "$GITHUB_OUTPUT"
+            printf "%s\n" "$1" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          }
+
+          # Raw prompt mode — use as-is
+          if [ -z "$SKILL" ] && [ -n "$PROMPT" ]; then
+            write_output "$PROMPT"
+            exit 0
+          fi
+
+          if [ -z "$SKILL" ]; then
+            echo "Error: either 'skill' or 'prompt' input must be provided." >&2
+            exit 1
+          fi
+
+          # Resolve skill file path
+          if [[ "$SKILL" == */* ]]; then
+            # Contains a slash — path in the target repo
+            if [ -d "$SKILL" ]; then
+              skill_file="${SKILL}/SKILL.md"   # directory-style skill
+            else
+              skill_file="$SKILL"              # direct .md file
+            fi
+          else
+            # Bare name — central repo skill
+            skill_file="_ai_workflows/skills/${SKILL}/SKILL.md"
+          fi
+
+          if [ ! -f "$skill_file" ]; then
+            echo "Error: skill file not found: $skill_file" >&2
+            exit 1
+          fi
+
+          # Yank (strip) YAML frontmatter, then substitute $ARGUMENTS
+          body=$(awk 'BEGIN{fm=0} /^---$/{fm++; next} fm<2{next} {print}' "$skill_file")
+          body="${body//\$ARGUMENTS/$ARGS}"
+
+          write_output "$body"
+
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.skill.outputs.text }}

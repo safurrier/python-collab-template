@@ -11,11 +11,16 @@ concurrency:
 jobs:
   context-files:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/context_files_agent.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "context-files"
+      args: "auto ."
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-    # Optional: pass explicit mode/scope or a full prompt override:
+    # Optional: scope to a subdirectory:
     # with:
-    #   agent_args: "auto src/"
-    #   prompt_override: |
-    #     <custom prompt text>
+    #   skill: "context-files"
+    #   args: "auto src/"
+    # Optional: use a local skill from the target repo:
+    # with:
+    #   skill: ".claude/skills/context-files"

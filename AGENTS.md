@@ -12,15 +12,16 @@ The repo is intentionally minimal: workflow YAML, prompt files, and documentatio
 
 ```
 .github/workflows/
-  claude_pr_review.yml      # Reusable: code review agent (workflow_call)
-  context_files_agent.yml   # Reusable: AGENTS.md / CLAUDE.md generator (workflow_call)
+  claude_pr_agent.yml       # Reusable: generic skill runner (workflow_call)
   ai_pr_review.yml          # Caller example: code review for this repo
   context_files_pr.yml      # Caller example: context files agent for this repo
   docs.yml                  # MkDocs build + GitHub Pages deploy
 
-prompts/
-  codex_code_review_prompt.md    # Verbatim Codex Code Review prompt (OpenAI cookbook)
-  context_files_prompt.md        # Context files generator/updater prompt
+skills/
+  codex-code-review/
+    SKILL.md                # Codex Code Review prompt (verbatim body + frontmatter)
+  context-files/
+    SKILL.md                # Context files generator/updater prompt (with $ARGUMENTS)
 
 docs/                       # MkDocs documentation site source
   index.md                  # Overview and architecture
@@ -29,8 +30,8 @@ docs/                       # MkDocs documentation site source
   contributing.md           # How to add a new agent
   agents/
     index.md                # Agent catalog
-    pr-review.md            # Code review agent docs
-    context-files.md        # Context files agent docs
+    pr-review.md            # Code review skill docs
+    context-files.md        # Context files skill docs
 ```
 
 ---
@@ -39,17 +40,18 @@ docs/                       # MkDocs documentation site source
 
 ### Adding a new agent
 
-1. Create `prompts/<name>.md` — the Claude instruction text
-2. Create `.github/workflows/<name>.yml` — copy an existing reusable workflow, swap the prompt filename, adjust permissions if the agent writes files
-3. Create `docs/agents/<name>.md` — trigger table, caller snippet, customization options
-4. Add entry to `docs/agents/index.md` and `mkdocs.yml` nav
-5. Tag a new release: `git tag vX.Y && git push origin vX.Y`
+1. Create `skills/<name>/SKILL.md` — YAML frontmatter + prompt body (frontmatter is stripped before Claude sees it)
+2. Create `docs/agents/<name>.md` — trigger table, caller snippet, customization options
+3. Add entry to `docs/agents/index.md` and `mkdocs.yml` nav
+4. Tag a new release: `git tag vX.Y && git push origin vX.Y`
+
+No new workflow file needed — `claude_pr_agent.yml` handles all skills generically.
 
 See `docs/contributing.md` for the full checklist.
 
-### Updating a prompt
+### Updating a skill
 
-Edit the file in `prompts/`. Bump the version tag so target repos can opt in to the updated prompt on their own schedule.
+Edit `skills/<name>/SKILL.md`. Bump the version tag so target repos can opt in to the updated skill on their own schedule.
 
 ### Working on docs
 
@@ -90,18 +92,19 @@ No test suite, linter, or build step for the workflows themselves — validation
 ## Progressive disclosure
 
 - `docs/using.md` — full setup walkthrough for target repos
-- `docs/contributing.md` — step-by-step agent contribution guide
-- `docs/agents/pr-review.md` — code review agent: triggers, prompt override, permissions
-- `docs/agents/context-files.md` — context files agent: modes, `agent_args`, permissions
-- `.github/workflows/claude_pr_review.yml` — canonical source for reusable workflow structure
-- `prompts/context_files_prompt.md` — canonical source for context files prompt spec
+- `docs/contributing.md` — step-by-step skill contribution guide
+- `docs/agents/pr-review.md` — review skill: triggers, local skill override, sequencing
+- `docs/agents/context-files.md` — context files skill: modes, `args`, local override
+- `.github/workflows/claude_pr_agent.yml` — canonical source for the generic skill runner
+- `skills/context-files/SKILL.md` — canonical source for context files skill spec
 
 ---
 
 ## Gotchas
 
-- **Repo rename breaks callers**: the reusable workflows hard-code `repository: safurrier/python-collab-template` to check out the prompt files. If this repo is renamed, update that field in every reusable workflow.
+- **Repo rename breaks callers**: `claude_pr_agent.yml` hard-codes `repository: safurrier/python-collab-template` to check out the skills. If this repo is renamed, update that field.
 - **Private repo access**: if this repo is private, target repos must be granted access via Settings → Actions → Access → "Accessible from repositories in your account".
 - **Tag before using**: target repos reference `@v1` (or another tag). Push a tag before pointing any repo at this one.
-- **`contents: write` scope**: the context files agent needs `contents: write` to commit `AGENTS.md` / `CLAUDE.md`. The review agent only needs `read`.
-- **`$ARGUMENTS` substitution**: the context files prompt uses a `$ARGUMENTS` placeholder that the workflow substitutes via `sed` at runtime. Do not treat it as a shell variable in the prompt file itself.
+- **`contents: write` always on**: the generic workflow always requests `contents: write` so any skill can commit files. This is intentional.
+- **`$ARGUMENTS` substitution**: skills use a `$ARGUMENTS` placeholder that the workflow substitutes via `sed` at runtime using the `args:` input. It is not a shell variable — do not use `${ARGUMENTS}` or `$ARGS`.
+- **Frontmatter stripping**: the `awk` command in the workflow strips everything between the first and second `---` blocks. The skill body starts on the line after the closing `---`.

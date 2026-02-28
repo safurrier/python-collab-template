@@ -9,12 +9,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  scan:
+  review:
     if: ${{ github.event.pull_request.draft == false }}
-    uses: safurrier/python-collab-template/.github/workflows/claude_pr_review.yml@v1
+    uses: safurrier/python-collab-template/.github/workflows/claude_pr_agent.yml@v1
+    with:
+      skill: "codex-code-review"
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-    # Optional: override prompt per repo:
+    # Optional: run a local skill from the target repo instead:
     # with:
-    #   prompt_override: |
-    #     <custom prompt text>
+    #   skill: ".claude/skills/my-custom-review"
+    # Optional: use a raw prompt instead of a skill file:
+    # with:
+    #   prompt: |
+    #     Review this diff for security issues only.

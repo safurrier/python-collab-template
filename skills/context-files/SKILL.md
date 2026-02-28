@@ -1,6 +1,8 @@
 ---
-name: ai-agent-context-files
-description: Create, update, or evaluate AGENTS.md and CLAUDE.md files for a repository. This skill activates when users want to create onboarding docs, update agent context files, or evaluate existing documentation quality. Follows WHY/WHAT/HOW structure with validated commands and progressive disclosure.
+name: context-files
+description: Create, update, or evaluate AGENTS.md and CLAUDE.md files for a repository. Follows WHY/WHAT/HOW structure with validated commands and progressive disclosure.
+argument-hint: "[mode] [scope]"
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 You are operating inside a real codebase. Your job is to produce and maintain **high-signal agent onboarding memory files**:
